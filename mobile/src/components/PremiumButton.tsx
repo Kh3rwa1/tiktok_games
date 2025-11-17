@@ -60,21 +60,21 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
 
-  // Get variant colors
+  // Get variant colors - NEO-BRUTALISM STYLE
   const getVariantColors = (): string[] => {
     switch (variant) {
       case 'primary':
-        return ['#667eea', '#764ba2'];
+        return ['#FF0080', '#FF0080']; // Neon Pink - solid color
       case 'secondary':
-        return ['#f093fb', '#f5576c'];
+        return ['#00D9FF', '#00D9FF']; // Electric Blue - solid color
       case 'outline':
         return ['transparent', 'transparent'];
       case 'ghost':
         return ['transparent', 'transparent'];
       case 'danger':
-        return ['#fc466b', '#3f5efb'];
+        return ['#FF4500', '#FF4500']; // Blood Orange - solid color
       default:
-        return ['#667eea', '#764ba2'];
+        return ['#FF0080', '#FF0080'];
     }
   };
 
@@ -269,17 +269,20 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
 
 const styles = StyleSheet.create({
   buttonWrapper: {
-    borderRadius: 16,
-    overflow: 'hidden',
+    borderRadius: 2, // Neo-Brutalism: minimal radius
+    overflow: 'visible', // Show harsh shadows
+    borderWidth: 4, // Thick black border
+    borderColor: '#000',
+    // Harsh drop shadow (Neo-Brutalism)
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOffset: { width: 6, height: 6 },
+        shadowOpacity: 1,
+        shadowRadius: 0, // No blur - harsh shadow
       },
       android: {
-        elevation: 6,
+        elevation: 0, // We'll use border to simulate shadow
       },
     }),
   },
@@ -287,21 +290,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 0, // Neo-Brutalism: no rounded corners inside
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 2,
+    borderWidth: 4,
+    borderColor: '#000',
   },
   outlineButton: {
-    borderWidth: 2,
-    borderColor: '#667eea',
-    backgroundColor: 'transparent',
+    borderWidth: 4, // Thick border
+    borderColor: '#000',
+    backgroundColor: '#FFF',
   },
   ghostButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#000',
+    borderWidth: 4,
+    borderColor: '#FF0080',
   },
   fullWidth: {
     width: '100%',
@@ -310,9 +317,10 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   text: {
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800', // Extra bold
+    letterSpacing: 1.5,
     textAlign: 'center',
+    textTransform: 'uppercase', // Neo-Brutalism: uppercase text
   },
   iconLeft: {
     marginRight: 8,

@@ -1,0 +1,124 @@
+.stat-card {
+  background: var(--color-white);
+  border: var(--border-thick) solid var(--color-black);
+  box-shadow: var(--shadow-brutal-md);
+  padding: var(--space-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--color-neon-pink);
+}
+
+.stat-card-neon-pink::before {
+  background: var(--color-neon-pink);
+}
+
+.stat-card-electric-blue::before {
+  background: var(--color-electric-blue);
+}
+
+.stat-card-toxic-green::before {
+  background: var(--color-toxic-green);
+}
+
+.stat-card-cyber-yellow::before {
+  background: var(--color-cyber-yellow);
+}
+
+.stat-card-brutal-purple::before {
+  background: var(--color-brutal-purple);
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.stat-card-icon {
+  width: 48px;
+  height: 48px;
+  border: var(--border-medium) solid var(--color-black);
+  background: var(--color-black);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-gray-800);
+  margin: 0;
+}
+
+.stat-card-body {
+  margin-top: var(--space-md);
+}
+
+.stat-card-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-black);
+  line-height: 1;
+  margin-bottom: var(--space-xs);
+}
+
+.stat-card-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-gray-800);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-sm);
+}
+
+.stat-card-trend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-top: var(--space-sm);
+  padding: 6px 12px;
+  border: var(--border-medium) solid var(--color-black);
+  display: inline-flex;
+}
+
+.stat-card-trend.up {
+  background: var(--color-toxic-green);
+  color: var(--color-black);
+}
+
+.stat-card-trend.down {
+  background: var(--color-blood-orange);
+  color: var(--color-white);
+}
+
+.trend-arrow {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.trend-value {
+  font-family: var(--font-mono);
+}
+
+.trend-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+}

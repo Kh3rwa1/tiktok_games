@@ -122,17 +122,17 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
     return num.toString();
   };
 
-  // Get difficulty color
+  // Get difficulty color - NEO-BRUTALISM
   const getDifficultyColor = useMemo(() => {
     switch (game.difficulty) {
       case 'easy':
-        return '#4CAF50';
+        return '#00FF85'; // Toxic Green
       case 'medium':
-        return '#FF9800';
+        return '#FFE600'; // Cyber Yellow
       case 'hard':
-        return '#F44336';
+        return '#FF4500'; // Blood Orange
       default:
-        return '#999';
+        return '#00D9FF'; // Electric Blue
     }
   }, [game.difficulty]);
 
@@ -267,18 +267,21 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    borderRadius: 20,
-    overflow: 'hidden',
+    borderRadius: 2, // Neo-Brutalism: minimal radius
+    overflow: 'visible', // Show harsh shadows
     backgroundColor: '#1A1A1A',
+    borderWidth: 4, // Thick black border
+    borderColor: '#000',
+    // Harsh drop shadow (Neo-Brutalism)
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.44,
-        shadowRadius: 10.32,
+        shadowOffset: { width: 8, height: 8 },
+        shadowOpacity: 1,
+        shadowRadius: 0, // No blur - harsh shadow
       },
       android: {
-        elevation: 16,
+        elevation: 0, // Use border for shadow effect
       },
     }),
   },
@@ -301,8 +304,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     left: 12,
-    borderRadius: 12,
+    borderRadius: 0, // Neo-Brutalism: no rounded corners
     overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#000',
   },
   featuredGradient: {
     flexDirection: 'row',
@@ -310,26 +315,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     gap: 4,
+    backgroundColor: '#FFE600', // Cyber Yellow (solid, no gradient)
   },
   featuredText: {
-    color: '#FFF',
+    color: '#000',
     fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800', // Extra bold
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   difficultyBadge: {
     position: 'absolute',
     top: 12,
     right: 12,
-    borderRadius: 8,
+    borderRadius: 0, // Neo-Brutalism: no rounded corners
     paddingHorizontal: 8,
     paddingVertical: 4,
+    borderWidth: 3,
+    borderColor: '#000',
   },
   difficultyText: {
-    color: '#FFF',
+    color: '#000',
     fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800', // Extra bold
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   infoContainer: {
     position: 'absolute',
@@ -348,10 +358,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800', // Extra bold
     color: '#FFF',
     marginBottom: 4,
-    letterSpacing: 0.3,
+    letterSpacing: 1, // More spacing
+    textTransform: 'uppercase', // Neo-Brutalism: uppercase
   },
   creator: {
     fontSize: 13,
@@ -381,19 +392,22 @@ const styles = StyleSheet.create({
   likeButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 2, // Neo-Brutalism: minimal radius
+    backgroundColor: '#FF0080', // Neon Pink
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000',
+    // Harsh shadow
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
       },
       android: {
-        elevation: 5,
+        elevation: 0,
       },
     }),
   },
