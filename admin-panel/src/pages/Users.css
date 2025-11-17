@@ -1,0 +1,95 @@
+.users-page {
+  animation: brutal-slide-in 0.3s ease-out;
+}
+
+.stats-summary {
+  display: flex;
+  gap: var(--space-lg);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-white);
+  border: var(--border-thick) solid var(--color-black);
+  box-shadow: var(--shadow-brutal-sm);
+}
+
+.stat-item svg {
+  color: var(--color-neon-pink);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--color-black);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-gray-800);
+  letter-spacing: 0.05em;
+}
+
+.role-filters {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.role-filters .btn-brutal {
+  padding: 10px 20px;
+  font-size: 0.875rem;
+}
+
+/* User Cell */
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--color-neon-pink);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border: var(--border-medium) solid var(--color-black);
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+.user-id {
+  font-size: 0.75rem;
+  color: var(--color-gray-800);
+}
+
+/* Badge with icons */
+.badge-brutal svg {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-summary {
+    flex-direction: column;
+  }
+
+  .role-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+}
