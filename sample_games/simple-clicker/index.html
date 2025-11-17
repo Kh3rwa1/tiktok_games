@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simple Clicker Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-container {
+            text-align: center;
+            color: white;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .score-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 30px 0;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .click-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .click-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.2);
+            padding: 15px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .upgrade-button {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upgrade-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .upgrade-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            animation: float-up 1s ease-out forwards;
+            z-index: 1000;
+        }
+
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 Clicker Game</h1>
+
+        <div class="score-display" id="score">0</div>
+
+        <button class="click-button" id="clickButton">
+            <span style="font-size: 60px;">👆</span>
+        </button>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">Per Click</div>
+                <div class="stat-value" id="perClick">1</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Clicks</div>
+                <div class="stat-value" id="totalClicks">0</div>
+            </div>
+        </div>
+
+        <button class="upgrade-button" id="upgradeButton">
+            Upgrade (Cost: <span id="upgradeCost">10</span>)
+        </button>
+    </div>
+
+    <script>
+        // Game state
+        let score = 0;
+        let clickValue = 1;
+        let totalClicks = 0;
+        let upgradeCost = 10;
+        let upgradeLevel = 0;
+
+        // DOM elements
+        const scoreDisplay = document.getElementById('score');
+        const clickButton = document.getElementById('clickButton');
+        const upgradeButton = document.getElementById('upgradeButton');
+        const perClickDisplay = document.getElementById('perClick');
+        const totalClicksDisplay = document.getElementById('totalClicks');
+        const upgradeCostDisplay = document.getElementById('upgradeCost');
+
+        // Load saved game state
+        loadGame();
+
+        // Click handler
+        clickButton.addEventListener('click', (e) => {
+            score += clickValue;
+            totalClicks++;
+
+            updateDisplay();
+            createParticle(e.clientX, e.clientY, `+${clickValue}`);
+            saveGame();
+        });
+
+        // Upgrade handler
+        upgradeButton.addEventListener('click', () => {
+            if (score >= upgradeCost) {
+                score -= upgradeCost;
+                upgradeLevel++;
+                clickValue = Math.pow(2, upgradeLevel);
+                upgradeCost = Math.floor(10 * Math.pow(2, upgradeLevel));
+
+                updateDisplay();
+                saveGame();
+
+                // Celebration effect
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        createParticle(
+                            window.innerWidth / 2 + (Math.random() - 0.5) * 200,
+                            window.innerHeight / 2 + (Math.random() - 0.5) * 200,
+                            '🎉'
+                        );
+                    }, i * 50);
+                }
+            }
+        });
+
+        // Update all displays
+        function updateDisplay() {
+            scoreDisplay.textContent = formatNumber(score);
+            perClickDisplay.textContent = formatNumber(clickValue);
+            totalClicksDisplay.textContent = formatNumber(totalClicks);
+            upgradeCostDisplay.textContent = formatNumber(upgradeCost);
+
+            // Enable/disable upgrade button
+            upgradeButton.disabled = score < upgradeCost;
+        }
+
+        // Format large numbers
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            }
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        // Create floating particle effect
+        function createParticle(x, y, text) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.textContent = text;
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+
+            document.body.appendChild(particle);
+
+            setTimeout(() => {
+                particle.remove();
+            }, 1000);
+        }
+
+        // Save game to localStorage
+        function saveGame() {
+            const gameState = {
+                score,
+                clickValue,
+                totalClicks,
+                upgradeCost,
+                upgradeLevel
+            };
+            localStorage.setItem('clickerGameState', JSON.stringify(gameState));
+        }
+
+        // Load game from localStorage
+        function loadGame() {
+            const saved = localStorage.getItem('clickerGameState');
+            if (saved) {
+                const gameState = JSON.parse(saved);
+                score = gameState.score || 0;
+                clickValue = gameState.clickValue || 1;
+                totalClicks = gameState.totalClicks || 0;
+                upgradeCost = gameState.upgradeCost || 10;
+                upgradeLevel = gameState.upgradeLevel || 0;
+
+                updateDisplay();
+            }
+        }
+
+        // Auto-save every 5 seconds
+        setInterval(saveGame, 5000);
+
+        // Initial display update
+        updateDisplay();
+    </script>
+</body>
+</html>
