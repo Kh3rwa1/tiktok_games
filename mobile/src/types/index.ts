@@ -1,0 +1,187 @@
+// User types
+export interface User {
+  id: string;
+  uid: string;
+  username: string;
+  email: string;
+  avatar?: string;
+  bio?: string;
+  favoriteGames: string[];
+  playHistory: PlayHistoryEntry[];
+  stats: UserStats;
+  isActive: boolean;
+  role: 'user' | 'admin';
+  createdAt: Date | any;
+  updatedAt: Date | any;
+}
+
+export interface UserStats {
+  totalGamesPlayed: number;
+  totalPlayTime: number;
+}
+
+export interface PlayHistoryEntry {
+  gameId: string;
+  playedAt: Date | any;
+  duration: number;
+}
+
+// Game types
+export interface Game {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  gameUrl: string;
+  category: GameCategory;
+  tags: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  creatorId: string;
+  creator?: {
+    username: string;
+    avatar: string;
+  };
+  stats: GameStats;
+  likedBy: string[];
+  ratings: Rating[];
+  averageRating: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  version: string;
+  fileSize: number;
+  controls?: string;
+  requirements?: string;
+  createdAt: Date | any;
+  updatedAt: Date | any;
+}
+
+export interface GameStats {
+  views: number;
+  plays: number;
+  likes: number;
+  shares: number;
+  averagePlayTime: number;
+}
+
+export interface Rating {
+  userId: string;
+  rating: number;
+  createdAt: Date | any;
+}
+
+export type GameCategory =
+  | 'action'
+  | 'puzzle'
+  | 'adventure'
+  | 'strategy'
+  | 'casual'
+  | 'arcade'
+  | 'racing'
+  | 'sports'
+  | 'other';
+
+// API Response types
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// Auth types
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+// Navigation types
+export type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  MainTabs: undefined;
+  GamePlayer: { game: Game };
+};
+
+export type MainTabParamList = {
+  Home: undefined;
+  Search: undefined;
+  Favorites: undefined;
+  Profile: undefined;
+};
+
+// Store types
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isLoading: boolean;
+  error: string | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (username: string, email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
+  setUser: (user: User | null) => void;
+  setToken: (token: string | null) => void;
+}
+
+export interface GameState {
+  games: Game[];
+  currentGame: Game | null;
+  favorites: Game[];
+  isLoading: boolean;
+  error: string | null;
+  fetchGames: (params?: FetchGamesParams) => Promise<void>;
+  fetchGameById: (id: string) => Promise<void>;
+  toggleLike: (gameId: string) => Promise<void>;
+  rateGame: (gameId: string, rating: number) => Promise<void>;
+  recordPlay: (gameId: string, duration: number) => Promise<void>;
+  fetchFavorites: () => Promise<void>;
+}
+
+export interface FetchGamesParams {
+  page?: number;
+  limit?: number;
+  category?: GameCategory;
+  search?: string;
+  sortBy?: 'popular' | 'likes' | 'rating' | 'createdAt';
+  order?: 'asc' | 'desc';
+  featured?: boolean;
+}
+
+// Component Props types
+export interface GameCardProps {
+  game: Game;
+  onPress: (game: Game) => void;
+  showLikeButton?: boolean;
+  showStats?: boolean;
+}
+
+export interface LoadingSkeletonProps {
+  count?: number;
+  style?: any;
+}
+
+export interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
