@@ -43,3 +43,23 @@ coverage/
 .cache/
 temp/
 tmp/
+
+# Firebase
+firebase-service-account.json
+**/firebase-service-account.json
+.firebase/
+firebase-debug.log
+
+# Expo
+.expo/
+.expo-shared/
+web-build/
+
+# React Native
+*.jsbundle
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*

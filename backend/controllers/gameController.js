@@ -1,5 +1,5 @@
-const Game = require('../models/Game');
-const User = require('../models/User');
+const Game = require('../models/firestore/Game');
+const User = require('../models/firestore/User');
 
 // @desc    Get all games with pagination and filters
 // @route   GET /api/games
@@ -16,62 +16,34 @@ const getGames = async (req, res) => {
       featured
     } = req.query;
 
-    // Build query
-    const query = { isActive: true };
+    // Build options object
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sortBy,
+      order,
+      isActive: true
+    };
 
     if (category) {
-      query.category = category;
+      options.category = category;
     }
 
     if (featured === 'true') {
-      query.isFeatured = true;
+      options.featured = true;
     }
 
     if (search) {
-      query.$text = { $search: search };
+      options.search = search;
     }
 
-    // Build sort object
-    const sortOrder = order === 'asc' ? 1 : -1;
-    const sortOptions = {};
-
-    switch (sortBy) {
-      case 'popular':
-        sortOptions['stats.plays'] = sortOrder;
-        break;
-      case 'likes':
-        sortOptions['stats.likes'] = sortOrder;
-        break;
-      case 'rating':
-        sortOptions.averageRating = sortOrder;
-        break;
-      default:
-        sortOptions.createdAt = sortOrder;
-    }
-
-    // Execute query with pagination
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
-
-    const games = await Game.find(query)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limitNum)
-      .populate('creator', 'username avatar')
-      .lean();
-
-    const total = await Game.countDocuments(query);
+    // Get games with pagination
+    const result = await Game.findAll(options);
 
     res.json({
       success: true,
-      data: games,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
-      }
+      data: result.games,
+      pagination: result.pagination
     });
   } catch (error) {
     console.error('Get games error:', error);
@@ -84,16 +56,27 @@ const getGames = async (req, res) => {
 // @access  Public
 const getGame = async (req, res) => {
   try {
-    const game = await Game.findById(req.params.id)
-      .populate('creator', 'username avatar bio')
-      .populate('likedBy', 'username avatar');
+    const game = await Game.findById(req.params.id);
 
     if (!game) {
       return res.status(404).json({ message: 'Game not found' });
     }
 
     // Increment view count
-    await game.incrementViews();
+    await Game.incrementViews(req.params.id);
+
+    // Get creator info
+    if (game.creatorId) {
+      const creator = await User.findById(game.creatorId);
+      if (creator) {
+        game.creator = {
+          id: creator.id,
+          username: creator.username,
+          avatar: creator.avatar,
+          bio: creator.bio
+        };
+      }
+    }
 
     res.json({
       success: true,
@@ -132,7 +115,7 @@ const createGame = async (req, res) => {
       difficulty,
       controls,
       requirements,
-      creator: req.user.id
+      creatorId: req.user.uid
     });
 
     res.status(201).json({
@@ -150,14 +133,14 @@ const createGame = async (req, res) => {
 // @access  Private
 const updateGame = async (req, res) => {
   try {
-    let game = await Game.findById(req.params.id);
+    const game = await Game.findById(req.params.id);
 
     if (!game) {
       return res.status(404).json({ message: 'Game not found' });
     }
 
     // Check if user is creator or admin
-    if (game.creator.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (game.creatorId !== req.user.uid && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to update this game' });
     }
 
@@ -173,17 +156,19 @@ const updateGame = async (req, res) => {
       'requirements'
     ];
 
+    // Build updates object
+    const updates = {};
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
-        game[field] = req.body[field];
+        updates[field] = req.body[field];
       }
     });
 
-    await game.save();
+    const updatedGame = await Game.update(req.params.id, updates);
 
     res.json({
       success: true,
-      data: game
+      data: updatedGame
     });
   } catch (error) {
     console.error('Update game error:', error);
@@ -203,13 +188,12 @@ const deleteGame = async (req, res) => {
     }
 
     // Check if user is creator or admin
-    if (game.creator.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (game.creatorId !== req.user.uid && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this game' });
     }
 
     // Soft delete - just mark as inactive
-    game.isActive = false;
-    await game.save();
+    await Game.update(req.params.id, { isActive: false });
 
     res.json({
       success: true,
@@ -232,25 +216,16 @@ const toggleLike = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    const userIndex = game.likedBy.indexOf(req.user.id);
+    const wasLiked = game.likedBy.includes(req.user.uid);
 
-    if (userIndex > -1) {
-      // Unlike
-      game.likedBy.splice(userIndex, 1);
-      game.stats.likes -= 1;
-    } else {
-      // Like
-      game.likedBy.push(req.user.id);
-      game.stats.likes += 1;
-    }
-
-    await game.save();
+    // Toggle like
+    const updatedGame = await Game.toggleLike(req.params.id, req.user.uid);
 
     res.json({
       success: true,
       data: {
-        liked: userIndex === -1,
-        likes: game.stats.likes
+        liked: !wasLiked,
+        likes: updatedGame.stats.likes
       }
     });
   } catch (error) {
@@ -276,30 +251,14 @@ const rateGame = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    // Check if user already rated
-    const existingRatingIndex = game.ratings.findIndex(
-      r => r.user.toString() === req.user.id
-    );
-
-    if (existingRatingIndex > -1) {
-      // Update existing rating
-      game.ratings[existingRatingIndex].rating = rating;
-    } else {
-      // Add new rating
-      game.ratings.push({
-        user: req.user.id,
-        rating
-      });
-    }
-
-    game.updateAverageRating();
-    await game.save();
+    // Add or update rating
+    const updatedGame = await Game.addRating(req.params.id, req.user.uid, rating);
 
     res.json({
       success: true,
       data: {
-        averageRating: game.averageRating,
-        totalRatings: game.ratings.length
+        averageRating: updatedGame.averageRating,
+        totalRatings: updatedGame.ratings.length
       }
     });
   } catch (error) {
@@ -322,24 +281,23 @@ const recordPlay = async (req, res) => {
     }
 
     // Increment play count
-    await game.incrementPlays();
+    await Game.incrementPlays(req.params.id);
 
-    // Update average play time
+    // Update average play time if duration provided
     if (duration) {
-      const totalPlayTime = game.stats.averagePlayTime * (game.stats.plays - 1) + duration;
-      game.stats.averagePlayTime = Math.round(totalPlayTime / game.stats.plays);
-      await game.save();
+      const updatedGame = await Game.findById(req.params.id);
+      const totalPlayTime = game.stats.averagePlayTime * (game.stats.plays) + duration;
+      const averagePlayTime = Math.round(totalPlayTime / (game.stats.plays + 1));
+      await Game.update(req.params.id, {
+        'stats.averagePlayTime': averagePlayTime
+      });
     }
 
     // Add to user's play history
-    const user = await User.findById(req.user.id);
-    user.playHistory.push({
-      game: game._id,
+    await User.addPlayHistory(req.user.uid, {
+      gameId: req.params.id,
       duration: duration || 0
     });
-    user.stats.totalGamesPlayed += 1;
-    user.stats.totalPlayTime += duration || 0;
-    await user.save();
 
     res.json({
       success: true,

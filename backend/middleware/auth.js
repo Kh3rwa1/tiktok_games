@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { admin: firebaseAdmin } = require('../config/firebase');
+const User = require('../models/firestore/User');
 
-// Middleware to verify JWT token
+// Middleware to verify Firebase ID token
 const protect = async (req, res, next) => {
   let token;
 
@@ -11,11 +11,11 @@ const protect = async (req, res, next) => {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
 
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Verify Firebase ID token
+      const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
 
-      // Get user from token (exclude password)
-      req.user = await User.findById(decoded.id).select('-password');
+      // Get user from Firestore
+      req.user = await User.findById(decodedToken.uid);
 
       if (!req.user) {
         return res.status(401).json({ message: 'User not found' });
@@ -25,20 +25,24 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ message: 'User account is inactive' });
       }
 
+      // Add Firebase UID to request
+      req.uid = decodedToken.uid;
+
       next();
     } catch (error) {
       console.error('Token verification error:', error);
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+      return res.status(401).json({
+        message: 'Not authorized, token failed',
+        error: error.message
+      });
     }
-  }
-
-  if (!token) {
+  } else {
     return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 
 // Middleware to check if user is admin
-const admin = (req, res, next) => {
+const adminOnly = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
@@ -53,22 +57,40 @@ const optionalAuth = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
+      const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+      req.user = await User.findById(decodedToken.uid);
+      req.uid = decodedToken.uid;
     } catch (error) {
       // If token is invalid, just continue without user
       req.user = null;
+      req.uid = null;
     }
   }
 
   next();
 };
 
-// Generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '30d'
-  });
+// Verify email verification status
+const requireEmailVerification = async (req, res, next) => {
+  try {
+    if (!req.uid) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    const userRecord = await firebaseAdmin.auth().getUser(req.uid);
+
+    if (!userRecord.emailVerified) {
+      return res.status(403).json({
+        message: 'Email verification required',
+        emailVerified: false
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Email verification check error:', error);
+    return res.status(500).json({ message: 'Error checking email verification' });
+  }
 };
 
-module.exports = { protect, admin, optionalAuth, generateToken };
+module.exports = { protect, adminOnly, optionalAuth, requireEmailVerification };

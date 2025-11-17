@@ -1,5 +1,5 @@
-const User = require('../models/User');
-const { generateToken } = require('../middleware/auth');
+const User = require('../models/firestore/User');
+const { admin } = require('../config/firebase');
 const { validationResult } = require('express-validator');
 
 // @desc    Register new user
@@ -13,61 +13,72 @@ const register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { username, email, password } = req.body;
+    const { username, email, password, avatar, bio } = req.body;
 
     // Check if user already exists
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
-
-    if (userExists) {
+    const emailExists = await User.findByEmail(email);
+    if (emailExists) {
       return res.status(400).json({
-        message: userExists.email === email
-          ? 'Email already registered'
-          : 'Username already taken'
+        message: 'Email already registered'
       });
     }
 
-    // Create user
+    const usernameExists = await User.findByUsername(username);
+    if (usernameExists) {
+      return res.status(400).json({
+        message: 'Username already taken'
+      });
+    }
+
+    // Create user in Firebase Auth and Firestore
     const user = await User.create({
       username,
       email,
-      password
+      password,
+      avatar,
+      bio
     });
 
-    if (user) {
-      res.status(201).json({
-        success: true,
-        data: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          avatar: user.avatar,
-          token: generateToken(user._id)
-        }
-      });
-    }
+    // Generate custom token for the user
+    const customToken = await admin.auth().createCustomToken(user.id);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        token: customToken
+      }
+    });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
 
-// @desc    Login user
+// @desc    Login user (verify Firebase token)
 // @route   POST /api/auth/login
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { idToken } = req.body;
 
     // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
+    if (!idToken) {
+      return res.status(400).json({ message: 'Please provide Firebase ID token' });
     }
 
-    // Find user and include password for comparison
-    const user = await User.findOne({ email }).select('+password');
+    // Verify Firebase ID token
+    const decodedToken = await User.verifyToken(idToken);
+    const uid = decodedToken.uid;
+
+    // Get user from Firestore
+    const user = await User.findById(uid);
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'User not found' });
     }
 
     // Check if account is active
@@ -75,23 +86,16 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Account is inactive' });
     }
 
-    // Check password
-    const isPasswordMatch = await user.comparePassword(password);
-
-    if (!isPasswordMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
     res.json({
       success: true,
       data: {
-        id: user._id,
+        id: user.id,
         username: user.username,
         email: user.email,
         avatar: user.avatar,
         bio: user.bio,
         stats: user.stats,
-        token: generateToken(user._id)
+        token: idToken
       }
     });
   } catch (error) {
@@ -105,12 +109,15 @@ const login = async (req, res) => {
 // @access  Private
 const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .populate('favoriteGames', 'title thumbnail category');
+    const user = await User.findById(req.user.uid);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     res.json({
       success: true,
-      data: user.toPublicProfile()
+      data: User.toPublicProfile(user)
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -125,7 +132,7 @@ const updateProfile = async (req, res) => {
   try {
     const { username, bio, avatar } = req.body;
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.uid);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -133,21 +140,23 @@ const updateProfile = async (req, res) => {
 
     // Check if username is being changed and if it's already taken
     if (username && username !== user.username) {
-      const existingUser = await User.findOne({ username });
-      if (existingUser) {
+      const existingUser = await User.findByUsername(username);
+      if (existingUser && existingUser.id !== user.id) {
         return res.status(400).json({ message: 'Username already taken' });
       }
-      user.username = username;
     }
 
-    if (bio !== undefined) user.bio = bio;
-    if (avatar) user.avatar = avatar;
+    // Build updates object
+    const updates = {};
+    if (username) updates.username = username;
+    if (bio !== undefined) updates.bio = bio;
+    if (avatar) updates.avatar = avatar;
 
-    await user.save();
+    const updatedUser = await User.update(req.user.uid, updates);
 
     res.json({
       success: true,
-      data: user.toPublicProfile()
+      data: User.toPublicProfile(updatedUser)
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -160,11 +169,11 @@ const updateProfile = async (req, res) => {
 // @access  Private
 const changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { newPassword } = req.body;
 
-    if (!currentPassword || !newPassword) {
+    if (!newPassword) {
       return res.status(400).json({
-        message: 'Please provide current and new password'
+        message: 'Please provide new password'
       });
     }
 
@@ -174,17 +183,8 @@ const changePassword = async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.user.id).select('+password');
-
-    // Verify current password
-    const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Current password is incorrect' });
-    }
-
-    // Update password
-    user.password = newPassword;
-    await user.save();
+    // Update password in Firebase Auth
+    await User.updatePassword(req.user.uid, newPassword);
 
     res.json({
       success: true,
