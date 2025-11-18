@@ -1,12 +1,16 @@
 {
   "name": "tiktok-games-mobile",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "World's Best & Smoothest TikTok Games Mobile App - 120FPS Ultra Performance",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios",
+    "build:all": "eas build --platform all"
   },
   "dependencies": {
     "expo": "~50.0.0",
