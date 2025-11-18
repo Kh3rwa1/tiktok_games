@@ -356,7 +356,7 @@ router.get('/users', protect, adminOnly, async (req, res) => {
 
     query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
-    const [users] = await pool.execute(query, [...values, limit, offset]);
+    const [users] = await pool.execute(query, [...values, String(limit), String(offset)]);
     const [countResult] = await pool.execute(countQuery, values);
 
     res.json({
@@ -529,7 +529,7 @@ router.post('/games', protect, adminOnly, upload.fields([
 
       // Find index.html
       const files = await fs.readdir(gamesDir);
-      const hasIndex = files.includes('index.html');
+      let hasIndex = files.includes('index.html');
 
       if (!hasIndex) {
         // Check subdirectories
@@ -546,11 +546,21 @@ router.post('/games', protect, adminOnly, upload.fields([
                   path.join(gamesDir, sf)
                 );
               }
-              await fs.rmdir(subPath);
+              await fs.rm(subPath, { recursive: true, force: true });
+              hasIndex = true;
               break;
             }
           }
         }
+      }
+
+      // Verify index.html exists after extraction
+      if (!hasIndex) {
+        await fs.rm(gamesDir, { recursive: true, force: true });
+        return res.status(400).json({
+          success: false,
+          error: 'No index.html found in the ZIP file. Game packages must contain an index.html file.'
+        });
       }
 
       gameUrl = `/games/${gameId}/index.html`;
@@ -651,7 +661,9 @@ router.put('/games/:id', protect, adminOnly, upload.fields([
 
       // Find index.html and restructure if needed
       const files = await fs.readdir(gamesDir);
-      if (!files.includes('index.html')) {
+      let hasIndex = files.includes('index.html');
+
+      if (!hasIndex) {
         for (const file of files) {
           const subPath = path.join(gamesDir, file);
           const stat = await fs.stat(subPath);
@@ -664,11 +676,21 @@ router.put('/games/:id', protect, adminOnly, upload.fields([
                   path.join(gamesDir, sf)
                 );
               }
-              await fs.rmdir(subPath);
+              await fs.rm(subPath, { recursive: true, force: true });
+              hasIndex = true;
               break;
             }
           }
         }
+      }
+
+      // Verify index.html exists after extraction
+      if (!hasIndex) {
+        await fs.rm(gamesDir, { recursive: true, force: true });
+        return res.status(400).json({
+          success: false,
+          error: 'No index.html found in the ZIP file. Game packages must contain an index.html file.'
+        });
       }
 
       updateData.gameUrl = `/games/${id}/index.html`;
@@ -824,7 +846,7 @@ router.get('/notifications', protect, adminOnly, async (req, res) => {
        LEFT JOIN users u ON n.created_by = u.id
        ORDER BY n.created_at DESC
        LIMIT ? OFFSET ?`,
-      [limit, offset]
+      [String(limit), String(offset)]
     );
 
     const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM notifications');
@@ -944,7 +966,7 @@ router.get('/push-notifications', protect, adminOnly, async (req, res) => {
        LEFT JOIN users u ON pn.created_by = u.id
        ORDER BY pn.created_at DESC
        LIMIT ? OFFSET ?`,
-      [limit, offset]
+      [String(limit), String(offset)]
     );
 
     const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM push_notifications');
@@ -1251,7 +1273,7 @@ router.get('/audit-log', protect, adminOnly, async (req, res) => {
 
     query += ` ORDER BY al.created_at DESC LIMIT ? OFFSET ?`;
 
-    const [logs] = await pool.execute(query, [...values, limit, offset]);
+    const [logs] = await pool.execute(query, [...values, String(limit), String(offset)]);
     const [countResult] = await pool.execute(countQuery, values);
 
     res.json({
