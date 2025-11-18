@@ -332,6 +332,12 @@ class ApiClient {
     return response.data || [];
   }
 
+  async markNotificationRead(notificationId: number): Promise<void> {
+    await this.request(`/api/games/app/notifications/${notificationId}/read`, {
+      method: 'POST',
+    });
+  }
+
   // ==================== HEALTH CHECK ====================
 
   async healthCheck(): Promise<any> {
