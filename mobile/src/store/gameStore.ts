@@ -13,7 +13,8 @@ import {
   arrayUnion,
   arrayRemove,
   increment,
-  Timestamp
+  Timestamp,
+  QueryConstraint
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Game, GameState, FetchGamesParams } from '../types';
@@ -39,28 +40,34 @@ export const useGameStore = create<GameState>((set, get) => ({
         featured
       } = params;
 
-      // Build query
-      let q = query(collection(db, 'games'), where('isActive', '==', true));
+      // Build query constraints array
+      const constraints: QueryConstraint[] = [
+        where('isActive', '==', true)
+      ];
 
       // Add filters
       if (category) {
-        q = query(q, where('category', '==', category));
+        constraints.push(where('category', '==', category));
       }
 
       if (featured !== undefined) {
-        q = query(q, where('isFeatured', '==', featured));
+        constraints.push(where('isFeatured', '==', featured));
       }
 
       // Add sorting
       const sortField = getSortField(sortBy);
-      q = query(q, orderBy(sortField, order as any), limit(pageLimit));
+      constraints.push(orderBy(sortField, order as 'asc' | 'desc'));
+      constraints.push(limit(pageLimit));
+
+      // Build final query
+      const q = query(collection(db, 'games'), ...constraints);
 
       // Execute query
       const snapshot = await getDocs(q);
 
-      const games: Game[] = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      const games: Game[] = snapshot.docs.map(docSnapshot => ({
+        id: docSnapshot.id,
+        ...docSnapshot.data()
       } as Game));
 
       // Client-side search if needed
@@ -80,8 +87,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     } catch (error: any) {
       console.error('Fetch games error:', error);
+
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to fetch games';
+      if (error.code === 'permission-denied') {
+        errorMessage = 'Permission denied. Please check your authentication.';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Service unavailable. Please check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       set({
-        error: error.message || 'Failed to fetch games',
+        error: errorMessage,
         isLoading: false
       });
       throw error;
@@ -261,7 +279,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   recordPlay: async (gameId: string, duration: number) => {
     try {
       const user = useAuthStore.getState().user;
-      if (!user) throw new Error('Must be logged in to record play');
+      if (!user) {
+        console.warn('Cannot record play: User not logged in');
+        return;
+      }
+
+      if (!gameId || duration < 0) {
+        console.warn('Invalid gameId or duration');
+        return;
+      }
 
       // Update game stats
       await updateDoc(doc(db, 'games', gameId), {
@@ -282,7 +308,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     } catch (error: any) {
       console.error('Record play error:', error);
-      set({ error: error.message || 'Failed to record play' });
+      // Don't set error state to avoid disrupting user experience
+      // Play recording is not critical for the user
+      if (error.code === 'permission-denied') {
+        console.warn('Permission denied while recording play');
+      }
     }
   },
 

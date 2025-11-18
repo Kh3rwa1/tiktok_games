@@ -177,8 +177,11 @@ export interface GameCardProps {
 }
 
 export interface LoadingSkeletonProps {
+  variant?: 'card' | 'list' | 'profile' | 'grid' | 'game';
   count?: number;
   style?: any;
+  isLoading?: boolean;
+  children?: React.ReactNode;
 }
 
 export interface ErrorBoundaryProps {
