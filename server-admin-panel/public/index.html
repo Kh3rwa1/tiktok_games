@@ -6,55 +6,198 @@
   <title>Admin Panel - TikTok Games</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* NEO-BRUTALISM DESIGN SYSTEM */
+    /* AAA+ PREMIUM ADMIN PANEL - ULTRA SMOOTH ANIMATIONS */
+
+    /* ==================== CSS VARIABLES ==================== */
     :root {
-      /* Bold Primary Colors */
-      --brutal-yellow: #FFE500;
-      --brutal-cyan: #00D4FF;
-      --brutal-magenta: #FF00FF;
-      --brutal-lime: #00FF66;
-      --brutal-orange: #FF6600;
-      --brutal-pink: #FF69B4;
-      --brutal-blue: #0066FF;
-      --brutal-red: #FF0033;
-
-      /* Core Colors */
-      --brutal-black: #000000;
-      --brutal-white: #FFFFFF;
-      --brutal-cream: #FFF8E7;
-      --brutal-gray: #E5E5E5;
-
-      /* Semantic Colors */
+      /* Premium Color Palette */
+      --primary: #FF0050;
+      --primary-glow: rgba(255, 0, 80, 0.4);
+      --secondary: #00D4FF;
+      --secondary-glow: rgba(0, 212, 255, 0.4);
+      --accent: #FFE500;
+      --accent-glow: rgba(255, 229, 0, 0.4);
       --success: #00FF66;
-      --danger: #FF0033;
+      --danger: #FF3333;
       --warning: #FFE500;
       --info: #00D4FF;
+
+      /* Dark Theme */
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-tertiary: #1a1a24;
+      --bg-card: #16161f;
+      --bg-hover: #1e1e2a;
+
+      /* Text */
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.4);
+
+      /* Borders */
+      --border-color: rgba(255, 255, 255, 0.1);
+      --border-glow: rgba(255, 0, 80, 0.3);
 
       /* Layout */
       --sidebar-width: 280px;
       --header-height: 70px;
-      --border-width: 4px;
-      --shadow-offset: 6px;
+      --border-radius: 12px;
+      --border-radius-lg: 20px;
+
+      /* Shadows */
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 30px var(--primary-glow);
+
+      /* Transitions */
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
+    /* ==================== RESET & BASE ==================== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Space Mono', 'Courier New', monospace;
-      background: var(--brutal-cream);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
       min-height: 100vh;
-      color: var(--brutal-black);
+      color: var(--text-primary);
+      overflow-x: hidden;
     }
 
-    /* BRUTAL COMPONENTS */
+    /* ==================== KEYFRAME ANIMATIONS ==================== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
-    /* Login Container */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    @keyframes slideOutRight {
+      from { transform: translateX(0); }
+      to { transform: translateX(120%); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px var(--primary-glow); }
+      50% { box-shadow: 0 0 40px var(--primary-glow), 0 0 60px var(--primary-glow); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    @keyframes borderGlow {
+      0%, 100% { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+      50% { border-color: var(--secondary); box-shadow: 0 0 20px var(--secondary-glow); }
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes typewriter {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    /* ==================== PARTICLE BACKGROUND ==================== */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: float 15s infinite;
+      opacity: 0.3;
+    }
+
+    .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 20s; }
+    .particle:nth-child(2) { left: 20%; animation-delay: 2s; animation-duration: 18s; background: var(--secondary); }
+    .particle:nth-child(3) { left: 30%; animation-delay: 4s; animation-duration: 22s; }
+    .particle:nth-child(4) { left: 40%; animation-delay: 1s; animation-duration: 19s; background: var(--accent); }
+    .particle:nth-child(5) { left: 50%; animation-delay: 3s; animation-duration: 21s; }
+    .particle:nth-child(6) { left: 60%; animation-delay: 5s; animation-duration: 17s; background: var(--secondary); }
+    .particle:nth-child(7) { left: 70%; animation-delay: 2s; animation-duration: 23s; }
+    .particle:nth-child(8) { left: 80%; animation-delay: 4s; animation-duration: 16s; background: var(--primary); }
+    .particle:nth-child(9) { left: 90%; animation-delay: 1s; animation-duration: 20s; }
+    .particle:nth-child(10) { left: 95%; animation-delay: 3s; animation-duration: 18s; background: var(--accent); }
+
+    /* ==================== LOGIN SCREEN ==================== */
     .login-container {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--brutal-yellow);
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #1a0a1f 50%, var(--bg-primary) 100%);
       padding: 20px;
       position: relative;
       overflow: hidden;
@@ -63,57 +206,75 @@
     .login-container::before {
       content: '';
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 10px,
-        rgba(0,0,0,0.03) 10px,
-        rgba(0,0,0,0.03) 20px
-      );
+      top: 50%;
+      left: 50%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      animation: pulse 4s ease-in-out infinite;
     }
 
     .login-box {
-      background: var(--brutal-white);
-      border: var(--border-width) solid var(--brutal-black);
-      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--brutal-black);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-lg);
       padding: 48px;
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
       position: relative;
-      transform: rotate(-1deg);
+      animation: scaleIn 0.5s ease-out;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .login-box::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: var(--border-radius-lg);
+      background: linear-gradient(45deg, var(--primary), var(--secondary), var(--primary));
+      background-size: 200% 200%;
+      animation: gradientShift 3s ease infinite;
+      z-index: -1;
+      opacity: 0.5;
     }
 
     .login-box h1 {
       text-align: center;
-      color: var(--brutal-black);
-      margin-bottom: 8px;
       font-size: 28px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 2px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .login-box p {
       text-align: center;
-      color: var(--brutal-black);
+      color: var(--text-secondary);
       margin-bottom: 36px;
       font-size: 14px;
-      font-weight: 500;
     }
 
-    /* Form Elements */
-    .form-group { margin-bottom: 24px; }
+    /* ==================== FORM ELEMENTS ==================== */
+    .form-group {
+      margin-bottom: 24px;
+      animation: fadeInUp 0.5s ease-out;
+      animation-fill-mode: both;
+    }
+
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
 
     .form-group label {
       display: block;
       margin-bottom: 10px;
-      font-weight: 700;
-      color: var(--brutal-black);
-      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -123,130 +284,143 @@
     .form-group textarea {
       width: 100%;
       padding: 14px 18px;
-      border: 3px solid var(--brutal-black);
-      background: var(--brutal-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      background: var(--bg-secondary);
       font-size: 14px;
       font-family: inherit;
-      font-weight: 500;
-      transition: all 0.15s ease;
+      color: var(--text-primary);
+      transition: all var(--transition-normal);
     }
 
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
       outline: none;
-      background: var(--brutal-yellow);
-      box-shadow: 4px 4px 0 var(--brutal-black);
-      transform: translate(-2px, -2px);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+      transform: translateY(-2px);
     }
 
     .form-group input::placeholder {
-      color: #666;
-      font-weight: 400;
+      color: var(--text-muted);
     }
 
-    /* File Upload Area */
+    /* File Upload */
     .file-upload-area {
-      border: 3px dashed var(--brutal-black);
-      background: var(--brutal-gray);
+      border: 2px dashed var(--border-color);
+      background: var(--bg-secondary);
       padding: 32px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all var(--transition-normal);
+      border-radius: var(--border-radius);
     }
 
     .file-upload-area:hover {
-      background: var(--brutal-yellow);
-      transform: translate(-2px, -2px);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      border-color: var(--primary);
+      background: rgba(255, 0, 80, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .file-upload-area.has-file {
+      border-color: var(--success);
+      background: rgba(0, 255, 102, 0.1);
     }
 
     .file-upload-area i {
       font-size: 32px;
       margin-bottom: 12px;
       display: block;
+      color: var(--primary);
     }
 
-    .file-upload-area p {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .file-upload-area.has-file {
-      border-color: var(--success);
-      background: rgba(0, 255, 102, 0.2);
-    }
-
-    .file-upload-area.has-file i {
-      color: var(--success);
-    }
-
-    /* Buttons - Neo Brutalist Style */
+    /* ==================== BUTTONS ==================== */
     .btn {
       padding: 14px 28px;
-      font-weight: 700;
+      font-weight: 600;
       font-size: 14px;
       cursor: pointer;
-      transition: all 0.15s ease;
-      border: 3px solid var(--brutal-black);
+      transition: all var(--transition-normal);
+      border: none;
+      border-radius: var(--border-radius);
       display: inline-flex;
       align-items: center;
       gap: 10px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       font-family: inherit;
       position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
     }
 
     .btn:hover {
-      transform: translate(-3px, -3px);
-      box-shadow: 6px 6px 0 var(--brutal-black);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
     }
 
     .btn:active {
-      transform: translate(0, 0);
-      box-shadow: none;
+      transform: translateY(-1px);
     }
 
     .btn-primary {
-      background: var(--brutal-yellow);
-      color: var(--brutal-black);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      background: linear-gradient(135deg, var(--primary), #FF4500);
+      color: white;
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 25px var(--primary-glow);
     }
 
     .btn-secondary {
-      background: var(--brutal-gray);
-      color: var(--brutal-black);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
     }
 
     .btn-success {
-      background: var(--brutal-lime);
-      color: var(--brutal-black);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      background: linear-gradient(135deg, var(--success), #00cc52);
+      color: var(--bg-primary);
     }
 
     .btn-danger {
-      background: var(--brutal-red);
-      color: var(--brutal-white);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      background: linear-gradient(135deg, var(--danger), #cc0000);
+      color: white;
     }
 
     .btn-info {
-      background: var(--brutal-cyan);
-      color: var(--brutal-black);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      background: linear-gradient(135deg, var(--info), #0099cc);
+      color: var(--bg-primary);
     }
 
     .btn-outline {
       background: transparent;
-      color: var(--brutal-black);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
     }
 
     .btn-outline:hover {
-      background: var(--brutal-yellow);
+      border-color: var(--primary);
+      color: var(--primary);
     }
 
     .btn-sm {
@@ -259,55 +433,61 @@
       justify-content: center;
     }
 
-    /* App Container */
-    .app-container { display: flex; min-height: 100vh; }
+    /* ==================== APP CONTAINER ==================== */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
 
-    /* Sidebar - Neo Brutalist */
+    /* ==================== SIDEBAR ==================== */
     .sidebar {
       width: var(--sidebar-width);
-      background: var(--brutal-black);
-      color: var(--brutal-white);
+      background: var(--bg-secondary);
       position: fixed;
       height: 100vh;
       overflow-y: auto;
       z-index: 1000;
-      transition: transform 0.3s;
-      border-right: var(--border-width) solid var(--brutal-black);
+      transition: transform var(--transition-normal);
+      border-right: 1px solid var(--border-color);
+      animation: fadeInLeft 0.5s ease-out;
     }
 
     .sidebar-header {
       padding: 24px;
-      border-bottom: 3px solid var(--brutal-white);
-      background: var(--brutal-magenta);
-      color: var(--brutal-black);
+      border-bottom: 1px solid var(--border-color);
+      background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
     }
 
     .sidebar-header h2 {
       font-size: 18px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 2px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .sidebar-header span {
-      font-size: 11px;
-      color: var(--brutal-black);
-      font-weight: 700;
-      background: var(--brutal-yellow);
-      padding: 2px 8px;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      background: var(--bg-tertiary);
+      padding: 4px 8px;
+      border-radius: 4px;
       display: inline-block;
       margin-top: 8px;
-      border: 2px solid var(--brutal-black);
     }
 
-    .sidebar-nav { padding: 20px 0; }
+    .sidebar-nav { padding: 16px 0; }
 
     .nav-section {
       padding: 12px 24px;
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: var(--brutal-gray);
+      color: var(--text-muted);
       margin-top: 16px;
       font-weight: 700;
     }
@@ -316,48 +496,69 @@
       display: flex;
       align-items: center;
       padding: 14px 24px;
-      color: var(--brutal-white);
+      color: var(--text-secondary);
       text-decoration: none;
-      transition: all 0.15s ease;
+      transition: all var(--transition-normal);
       cursor: pointer;
       font-size: 14px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border-left: 4px solid transparent;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-glow), transparent);
+      transition: width var(--transition-normal);
+    }
+
+    .nav-item:hover::before {
+      width: 100%;
     }
 
     .nav-item:hover {
-      background: var(--brutal-cyan);
-      color: var(--brutal-black);
-      border-left-color: var(--brutal-yellow);
+      color: var(--text-primary);
+      border-left-color: var(--primary);
     }
 
     .nav-item.active {
-      background: var(--brutal-yellow);
-      color: var(--brutal-black);
-      border-left-color: var(--brutal-magenta);
+      color: var(--primary);
+      background: rgba(255, 0, 80, 0.1);
+      border-left-color: var(--primary);
     }
 
     .nav-item i {
       width: 24px;
       margin-right: 14px;
       font-size: 16px;
+      position: relative;
+      z-index: 1;
     }
 
-    /* Main Content */
+    .nav-item span {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ==================== MAIN CONTENT ==================== */
     .main-content {
       flex: 1;
       margin-left: var(--sidebar-width);
       min-height: 100vh;
-      background: var(--brutal-cream);
+      background: var(--bg-primary);
     }
 
-    /* Header - Neo Brutalist */
+    /* ==================== HEADER ==================== */
     .header {
       height: var(--header-height);
-      background: var(--brutal-white);
-      border-bottom: var(--border-width) solid var(--brutal-black);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -365,14 +566,14 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      backdrop-filter: blur(10px);
+      animation: fadeInDown 0.5s ease-out;
     }
 
     .header h1 {
-      font-size: 22px;
-      color: var(--brutal-black);
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 2px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
     }
 
     .user-info {
@@ -381,66 +582,76 @@
       gap: 12px;
       cursor: pointer;
       padding: 8px 16px;
-      border: 3px solid var(--brutal-black);
-      background: var(--brutal-lime);
-      transition: all 0.15s ease;
+      border-radius: var(--border-radius);
+      background: var(--bg-tertiary);
+      transition: all var(--transition-normal);
     }
 
     .user-info:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      background: var(--bg-hover);
+      transform: translateY(-2px);
     }
 
     .user-avatar {
       width: 36px;
       height: 36px;
-      background: var(--brutal-black);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--brutal-white);
-      font-weight: 900;
+      color: white;
+      font-weight: 700;
       font-size: 14px;
     }
 
     .user-info span {
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 12px;
+      font-weight: 600;
+      font-size: 13px;
     }
 
-    /* Content Area */
-    .content { padding: 28px; }
+    /* ==================== CONTENT AREA ==================== */
+    .content {
+      padding: 28px;
+      animation: fadeIn 0.5s ease-out;
+    }
 
-    /* Cards - Neo Brutalist */
+    /* ==================== CARDS ==================== */
     .card {
-      background: var(--brutal-white);
-      border: var(--border-width) solid var(--brutal-black);
-      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--brutal-black);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-lg);
       margin-bottom: 28px;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-normal);
+      animation: fadeInUp 0.5s ease-out;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md), 0 0 20px var(--primary-glow);
+      transform: translateY(-2px);
     }
 
     .card-header {
       padding: 20px 24px;
-      border-bottom: 3px solid var(--brutal-black);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--brutal-cyan);
+      background: var(--bg-tertiary);
     }
 
     .card-header h3 {
       font-size: 16px;
-      color: var(--brutal-black);
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 2px;
+      font-weight: 700;
+      color: var(--text-primary);
     }
 
     .card-body { padding: 24px; }
 
-    /* Stats Grid */
+    /* ==================== STATS GRID ==================== */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -449,28 +660,37 @@
     }
 
     .stat-card {
-      background: var(--brutal-white);
-      border: var(--border-width) solid var(--brutal-black);
-      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--brutal-black);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-lg);
       padding: 24px;
       position: relative;
-      transition: all 0.15s ease;
+      transition: all var(--transition-normal);
+      overflow: hidden;
+      animation: fadeInUp 0.5s ease-out;
+      animation-fill-mode: both;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
     }
 
     .stat-card:hover {
-      transform: translate(-3px, -3px);
-      box-shadow: 9px 9px 0 var(--brutal-black);
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-lg), 0 0 30px var(--primary-glow);
     }
-
-    .stat-card:nth-child(1) { transform: rotate(-1deg); }
-    .stat-card:nth-child(2) { transform: rotate(0.5deg); }
-    .stat-card:nth-child(3) { transform: rotate(-0.5deg); }
-    .stat-card:nth-child(4) { transform: rotate(1deg); }
-
-    .stat-card:nth-child(1):hover { transform: rotate(-1deg) translate(-3px, -3px); }
-    .stat-card:nth-child(2):hover { transform: rotate(0.5deg) translate(-3px, -3px); }
-    .stat-card:nth-child(3):hover { transform: rotate(-0.5deg) translate(-3px, -3px); }
-    .stat-card:nth-child(4):hover { transform: rotate(1deg) translate(-3px, -3px); }
 
     .stat-card-header {
       display: flex;
@@ -485,30 +705,39 @@
       align-items: center;
       justify-content: center;
       font-size: 22px;
-      border: 3px solid var(--brutal-black);
+      border-radius: var(--border-radius);
+      transition: all var(--transition-normal);
     }
 
-    .stat-card-icon.primary { background: var(--brutal-magenta); color: var(--brutal-black); }
-    .stat-card-icon.success { background: var(--brutal-lime); color: var(--brutal-black); }
-    .stat-card-icon.warning { background: var(--brutal-yellow); color: var(--brutal-black); }
-    .stat-card-icon.info { background: var(--brutal-cyan); color: var(--brutal-black); }
+    .stat-card:hover .stat-card-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .stat-card-icon.primary { background: rgba(255, 0, 80, 0.2); color: var(--primary); }
+    .stat-card-icon.success { background: rgba(0, 255, 102, 0.2); color: var(--success); }
+    .stat-card-icon.warning { background: rgba(255, 229, 0, 0.2); color: var(--accent); }
+    .stat-card-icon.info { background: rgba(0, 212, 255, 0.2); color: var(--info); }
 
     .stat-card h4 {
-      font-size: 11px;
-      color: var(--brutal-black);
+      font-size: 12px;
+      color: var(--text-secondary);
       text-transform: uppercase;
-      letter-spacing: 2px;
-      font-weight: 700;
+      letter-spacing: 1px;
+      font-weight: 600;
       margin-bottom: 8px;
     }
 
     .stat-card .value {
       font-size: 36px;
-      font-weight: 900;
-      color: var(--brutal-black);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: countUp 0.8s ease-out;
     }
 
-    /* Tables - Neo Brutalist */
+    /* ==================== TABLES ==================== */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -517,32 +746,43 @@
     th, td {
       padding: 14px 18px;
       text-align: left;
-      border-bottom: 3px solid var(--brutal-black);
+      border-bottom: 1px solid var(--border-color);
     }
 
     th {
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--brutal-black);
-      font-weight: 900;
-      background: var(--brutal-yellow);
-      border-bottom: 3px solid var(--brutal-black);
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      background: var(--bg-tertiary);
     }
 
     td {
       font-size: 13px;
-      color: var(--brutal-black);
-      font-weight: 500;
+      color: var(--text-primary);
     }
 
-    tr:hover { background: var(--brutal-cream); }
-
-    tbody tr:last-child td {
-      border-bottom: none;
+    tr {
+      transition: all var(--transition-fast);
     }
 
-    /* Badges - Neo Brutalist */
+    tr:hover {
+      background: var(--bg-hover);
+    }
+
+    tbody tr {
+      animation: fadeInUp 0.3s ease-out;
+      animation-fill-mode: both;
+    }
+
+    tbody tr:nth-child(1) { animation-delay: 0.05s; }
+    tbody tr:nth-child(2) { animation-delay: 0.1s; }
+    tbody tr:nth-child(3) { animation-delay: 0.15s; }
+    tbody tr:nth-child(4) { animation-delay: 0.2s; }
+    tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+    /* ==================== BADGES ==================== */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -550,17 +790,22 @@
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      border: 2px solid var(--brutal-black);
+      letter-spacing: 0.5px;
+      border-radius: 20px;
+      transition: all var(--transition-fast);
     }
 
-    .badge-success { background: var(--brutal-lime); color: var(--brutal-black); }
-    .badge-danger { background: var(--brutal-red); color: var(--brutal-white); }
-    .badge-warning { background: var(--brutal-yellow); color: var(--brutal-black); }
-    .badge-info { background: var(--brutal-cyan); color: var(--brutal-black); }
-    .badge-primary { background: var(--brutal-magenta); color: var(--brutal-black); }
+    .badge:hover {
+      transform: scale(1.05);
+    }
 
-    /* Search Bar */
+    .badge-success { background: rgba(0, 255, 102, 0.2); color: var(--success); }
+    .badge-danger { background: rgba(255, 51, 51, 0.2); color: var(--danger); }
+    .badge-warning { background: rgba(255, 229, 0, 0.2); color: var(--accent); }
+    .badge-info { background: rgba(0, 212, 255, 0.2); color: var(--info); }
+    .badge-primary { background: rgba(255, 0, 80, 0.2); color: var(--primary); }
+
+    /* ==================== SEARCH BAR ==================== */
     .search-bar {
       display: flex;
       gap: 16px;
@@ -575,17 +820,19 @@
     .search-input input {
       width: 100%;
       padding: 12px 18px 12px 48px;
-      border: 3px solid var(--brutal-black);
-      background: var(--brutal-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      background: var(--bg-secondary);
       font-size: 14px;
       font-family: inherit;
-      font-weight: 500;
+      color: var(--text-primary);
+      transition: all var(--transition-normal);
     }
 
     .search-input input:focus {
       outline: none;
-      background: var(--brutal-yellow);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
     .search-input i {
@@ -593,11 +840,17 @@
       left: 18px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--brutal-black);
+      color: var(--text-muted);
       font-size: 16px;
+      transition: color var(--transition-fast);
     }
 
-    /* Toast Notifications */
+    .search-input input:focus + i,
+    .search-input:hover i {
+      color: var(--primary);
+    }
+
+    /* ==================== TOAST NOTIFICATIONS ==================== */
     .toast-container {
       position: fixed;
       top: 24px;
@@ -606,117 +859,146 @@
     }
 
     .toast {
-      background: var(--brutal-white);
-      border: 3px solid var(--brutal-black);
-      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--brutal-black);
-      padding: 18px 22px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 16px 20px;
       margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 14px;
-      animation: slideIn 0.3s ease;
+      animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       min-width: 320px;
-      font-weight: 600;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(10px);
     }
 
-    @keyframes slideIn {
-      from { transform: translateX(120%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+    .toast.exit {
+      animation: slideOutRight 0.3s ease-out forwards;
     }
 
     .toast.success {
-      border-left: 8px solid var(--brutal-lime);
-      background: var(--brutal-lime);
+      border-left: 4px solid var(--success);
     }
+
+    .toast.success i { color: var(--success); }
 
     .toast.error {
-      border-left: 8px solid var(--brutal-red);
-      background: var(--brutal-red);
-      color: var(--brutal-white);
+      border-left: 4px solid var(--danger);
     }
+
+    .toast.error i { color: var(--danger); }
 
     .toast.info {
-      border-left: 8px solid var(--brutal-cyan);
-      background: var(--brutal-cyan);
+      border-left: 4px solid var(--info);
     }
 
-    /* Tabs - Neo Brutalist */
+    .toast.info i { color: var(--info); }
+
+    /* ==================== TABS ==================== */
     .tabs {
       display: flex;
-      border-bottom: 4px solid var(--brutal-black);
+      border-bottom: 1px solid var(--border-color);
       margin-bottom: 28px;
-      background: var(--brutal-white);
+      background: var(--bg-secondary);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+      overflow: hidden;
     }
 
     .tab {
       padding: 16px 24px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--brutal-black);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
       cursor: pointer;
       border: none;
-      border-right: 3px solid var(--brutal-black);
       text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: all 0.15s ease;
-      background: var(--brutal-white);
+      letter-spacing: 0.5px;
+      transition: all var(--transition-normal);
+      background: transparent;
+      position: relative;
     }
 
-    .tab:hover { background: var(--brutal-cream); }
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      transition: all var(--transition-normal);
+      transform: translateX(-50%);
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
 
     .tab.active {
-      background: var(--brutal-yellow);
-      color: var(--brutal-black);
+      color: var(--primary);
+    }
+
+    .tab.active::after {
+      width: 100%;
     }
 
     .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
 
-    /* Settings Sections */
+    /* ==================== SETTINGS ==================== */
     .settings-section { margin-bottom: 36px; }
 
     .settings-section h4 {
       font-size: 14px;
-      color: var(--brutal-black);
+      color: var(--text-primary);
       margin-bottom: 20px;
       padding-bottom: 12px;
-      border-bottom: 3px solid var(--brutal-black);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-weight: 900;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 700;
     }
 
     .settings-group {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
+      gap: 20px;
     }
 
     .setting-item {
-      background: var(--brutal-white);
+      background: var(--bg-secondary);
       padding: 20px;
-      border: 3px solid var(--brutal-black);
-      box-shadow: 4px 4px 0 var(--brutal-black);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+      transition: all var(--transition-normal);
+    }
+
+    .setting-item:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
     }
 
     .setting-item label {
       display: block;
       font-size: 12px;
-      font-weight: 700;
-      color: var(--brutal-black);
+      font-weight: 600;
+      color: var(--text-secondary);
       margin-bottom: 10px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
     .setting-item .help-text {
-      font-size: 10px;
-      color: #666;
+      font-size: 11px;
+      color: var(--text-muted);
       margin-top: 8px;
-      font-weight: 500;
     }
 
-    /* Toggle Switch - Neo Brutalist */
+    /* ==================== TOGGLE SWITCH ==================== */
     .toggle {
       position: relative;
       display: inline-block;
@@ -733,100 +1015,144 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: var(--brutal-gray);
-      border: 3px solid var(--brutal-black);
-      transition: 0.2s;
+      background: var(--bg-tertiary);
+      border-radius: 30px;
+      transition: all var(--transition-normal);
     }
 
     .toggle-slider:before {
       position: absolute;
       content: "";
-      height: 18px;
-      width: 18px;
+      height: 22px;
+      width: 22px;
       left: 4px;
-      bottom: 3px;
-      background: var(--brutal-black);
-      transition: 0.2s;
+      bottom: 4px;
+      background: var(--text-primary);
+      border-radius: 50%;
+      transition: all var(--transition-bounce);
     }
 
-    .toggle input:checked + .toggle-slider { background: var(--brutal-lime); }
-    .toggle input:checked + .toggle-slider:before { transform: translateX(24px); }
+    .toggle input:checked + .toggle-slider {
+      background: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
 
-    /* Action Buttons */
-    .action-btns { display: flex; gap: 10px; }
+    .toggle input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+
+    /* ==================== ACTION BUTTONS ==================== */
+    .action-btns { display: flex; gap: 8px; }
 
     .action-btn {
       padding: 8px 12px;
-      border: 2px solid var(--brutal-black);
+      border: none;
+      border-radius: var(--border-radius);
       cursor: pointer;
       font-size: 12px;
-      transition: all 0.15s ease;
-      font-weight: 700;
+      transition: all var(--transition-normal);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .action-btn:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 3px 3px 0 var(--brutal-black);
+      transform: translateY(-2px) scale(1.05);
     }
 
-    .action-btn.edit { background: var(--brutal-cyan); color: var(--brutal-black); }
-    .action-btn.delete { background: var(--brutal-red); color: var(--brutal-white); }
-    .action-btn.toggle { background: var(--brutal-yellow); color: var(--brutal-black); }
+    .action-btn:active {
+      transform: translateY(0) scale(0.95);
+    }
 
-    /* Loading State */
+    .action-btn.edit {
+      background: rgba(0, 212, 255, 0.2);
+      color: var(--info);
+    }
+
+    .action-btn.edit:hover {
+      background: rgba(0, 212, 255, 0.3);
+      box-shadow: 0 0 15px var(--secondary-glow);
+    }
+
+    .action-btn.delete {
+      background: rgba(255, 51, 51, 0.2);
+      color: var(--danger);
+    }
+
+    .action-btn.delete:hover {
+      background: rgba(255, 51, 51, 0.3);
+      box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
+    }
+
+    .action-btn.toggle {
+      background: rgba(255, 229, 0, 0.2);
+      color: var(--accent);
+    }
+
+    .action-btn.toggle:hover {
+      background: rgba(255, 229, 0, 0.3);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    /* ==================== LOADING STATE ==================== */
     .loading {
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 60px;
+      flex-direction: column;
+      gap: 20px;
     }
 
     .spinner {
       width: 48px;
       height: 48px;
-      border: 4px solid var(--brutal-black);
-      border-top-color: var(--brutal-yellow);
-      animation: spin 0.6s linear infinite;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Grid Layouts */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
+    .loading-text {
+      color: var(--text-secondary);
+      font-size: 14px;
+      animation: pulse 2s ease-in-out infinite;
     }
 
-    /* Modal - Neo Brutalist */
+    /* ==================== MODAL ==================== */
     .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 2000;
       padding: 20px;
+      animation: fadeIn 0.3s ease-out;
+      backdrop-filter: blur(5px);
     }
 
     .modal {
-      background: var(--brutal-white);
-      border: var(--border-width) solid var(--brutal-black);
-      box-shadow: 8px 8px 0 var(--brutal-black);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-lg);
       width: 100%;
       max-width: 500px;
       max-height: 90vh;
       overflow-y: auto;
+      box-shadow: var(--shadow-lg), 0 0 50px var(--primary-glow);
+      animation: scaleIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     }
 
     .modal-header {
       padding: 20px 24px;
-      border-bottom: 3px solid var(--brutal-black);
-      background: var(--brutal-magenta);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -834,99 +1160,95 @@
 
     .modal-header h3 {
       font-size: 16px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 2px;
+      font-weight: 700;
     }
 
     .modal-close {
-      background: var(--brutal-black);
-      color: var(--brutal-white);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
       border: none;
       width: 32px;
       height: 32px;
+      border-radius: 50%;
       cursor: pointer;
       font-size: 18px;
-      font-weight: 700;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: var(--danger);
+      color: white;
+      transform: rotate(90deg);
     }
 
     .modal-body { padding: 24px; }
 
     .modal-footer {
       padding: 16px 24px;
-      border-top: 3px solid var(--brutal-black);
+      border-top: 1px solid var(--border-color);
       display: flex;
       gap: 12px;
       justify-content: flex-end;
     }
 
-    /* Empty State */
+    /* ==================== EMPTY STATE ==================== */
     .empty-state {
       text-align: center;
       padding: 60px 20px;
-      color: var(--brutal-black);
+      color: var(--text-secondary);
     }
 
     .empty-state i {
       font-size: 56px;
       margin-bottom: 20px;
       opacity: 0.3;
+      animation: float 3s ease-in-out infinite;
     }
 
     .empty-state p {
       font-size: 14px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-weight: 500;
     }
 
-    /* Game Thumbnail */
+    /* ==================== GAME/USER ITEMS ==================== */
     .game-thumb {
       width: 48px;
       height: 48px;
       object-fit: cover;
-      border: 2px solid var(--brutal-black);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+      transition: all var(--transition-fast);
     }
 
-    /* User Avatar in Table */
+    tr:hover .game-thumb {
+      transform: scale(1.1);
+      border-color: var(--primary);
+    }
+
     .table-avatar {
       width: 36px;
       height: 36px;
-      background: var(--brutal-black);
-      color: var(--brutal-white);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 900;
+      font-weight: 700;
       font-size: 12px;
     }
 
-    /* Responsive Design */
-    @media (max-width: 1024px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; }
-      .grid-2 { grid-template-columns: 1fr; }
-      .stats-grid { grid-template-columns: 1fr; }
-      .stat-card { transform: none !important; }
-      .stat-card:hover { transform: translate(-3px, -3px) !important; }
+    /* ==================== GRID LAYOUTS ==================== */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
     }
 
-    /* Scrollbar Styling */
-    ::-webkit-scrollbar { width: 12px; }
-    ::-webkit-scrollbar-track { background: var(--brutal-cream); }
-    ::-webkit-scrollbar-thumb {
-      background: var(--brutal-black);
-      border: 3px solid var(--brutal-cream);
-    }
-
-    /* Selection */
-    ::selection {
-      background: var(--brutal-yellow);
-      color: var(--brutal-black);
-    }
-
-    /* Confirmation Dialog */
+    /* ==================== CONFIRM DIALOG ==================== */
     .confirm-dialog {
       text-align: center;
       padding: 20px;
@@ -935,13 +1257,15 @@
     .confirm-dialog i {
       font-size: 48px;
       margin-bottom: 16px;
-      color: var(--brutal-red);
+      color: var(--danger);
+      animation: pulse 2s ease-in-out infinite;
     }
 
     .confirm-dialog p {
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 500;
       margin-bottom: 24px;
+      color: var(--text-secondary);
     }
 
     .confirm-dialog .btn-group {
@@ -949,9 +1273,65 @@
       gap: 12px;
       justify-content: center;
     }
+
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 1024px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ==================== SCROLLBAR ==================== */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* ==================== SELECTION ==================== */
+    ::selection {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ==================== PROGRESS BAR ==================== */
+    .progress-bar {
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 3px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: shimmer 2s infinite;
+      background-size: 200% 100%;
+    }
   </style>
 </head>
 <body>
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
   <div id="app"></div>
   <div class="toast-container" id="toastContainer"></div>
   <div id="modalContainer"></div>
@@ -975,23 +1355,18 @@
     };
 
     // ==================== AUTO-SYNC SYSTEM ====================
-    const SYNC_INTERVAL = 30000; // 30 seconds
+    const SYNC_INTERVAL = 30000;
 
     const startAutoSync = () => {
       if (state.syncInterval) return;
-
       state.syncInterval = setInterval(async () => {
         if (!state.token || !state.user) return;
-
         try {
-          // Silently refresh current page data
           await refreshCurrentPageData();
         } catch (error) {
           console.log('Auto-sync failed:', error.message);
         }
       }, SYNC_INTERVAL);
-
-      // Listen for online/offline events
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
     };
@@ -1018,8 +1393,6 @@
 
     const refreshCurrentPageData = async () => {
       if (!state.isOnline) return;
-
-      // Don't set loading state for background sync
       try {
         switch (state.currentPage) {
           case 'dashboard':
@@ -1058,7 +1431,6 @@
             break;
         }
       } catch (error) {
-        // Silent fail for background sync
         console.log('Background sync error:', error.message);
       }
     };
@@ -1066,26 +1438,21 @@
     // ==================== API LAYER ====================
     const api = async (endpoint, options = {}) => {
       const headers = { ...options.headers };
-
       if (!(options.body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
       }
-
       if (state.token) {
         headers['Authorization'] = `Bearer ${state.token}`;
       }
-
       try {
         const response = await fetch(`/api${endpoint}`, { ...options, headers });
         const data = await response.json();
-
         if (!response.ok) {
           const error = new Error(data.message || data.error || 'Request failed');
           error.status = response.status;
           error.data = data;
           throw error;
         }
-
         return data;
       } catch (error) {
         if (error.status === 401) {
@@ -1101,21 +1468,18 @@
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
-
       const icons = {
         success: 'check-circle',
         error: 'exclamation-triangle',
         info: 'info-circle'
       };
-
       toast.innerHTML = `
         <i class="fas fa-${icons[type] || 'info-circle'}"></i>
         <span>${escapeHtml(message)}</span>
       `;
-
       container.appendChild(toast);
       setTimeout(() => {
-        toast.style.animation = 'slideIn 0.3s ease reverse';
+        toast.classList.add('exit');
         setTimeout(() => toast.remove(), 300);
       }, 4000);
     };
@@ -1179,8 +1543,8 @@
     const renderLogin = () => `
       <div class="login-container">
         <div class="login-box">
-          <h1><i class="fas fa-gamepad"></i> Admin</h1>
-          <p>Manage your TikTok Games platform</p>
+          <h1><i class="fas fa-gamepad"></i> Admin Panel</h1>
+          <p>Premium control center for TikTok Games</p>
           <form onsubmit="handleLogin(event)">
             <div class="form-group">
               <label>Email</label>
@@ -1206,26 +1570,26 @@
         <aside class="sidebar" id="sidebar">
           <div class="sidebar-header">
             <h2><i class="fas fa-gamepad"></i> TikTok Games</h2>
-            <span>v4.0 ADMIN</span>
+            <span>v5.0 AAA+ ADMIN</span>
           </div>
           <nav class="sidebar-nav">
             <div class="nav-section">Main</div>
             <a class="nav-item ${state.currentPage === 'dashboard' ? 'active' : ''}" onclick="navigate('dashboard')">
-              <i class="fas fa-chart-pie"></i> Dashboard
+              <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
             </a>
             <div class="nav-section">Management</div>
             <a class="nav-item ${state.currentPage === 'users' ? 'active' : ''}" onclick="navigate('users')">
-              <i class="fas fa-users"></i> Users
+              <i class="fas fa-users"></i> <span>Users</span>
             </a>
             <a class="nav-item ${state.currentPage === 'games' ? 'active' : ''}" onclick="navigate('games')">
-              <i class="fas fa-gamepad"></i> Games
+              <i class="fas fa-gamepad"></i> <span>Games</span>
             </a>
             <a class="nav-item ${state.currentPage === 'notifications' ? 'active' : ''}" onclick="navigate('notifications')">
-              <i class="fas fa-bell"></i> Notifications
+              <i class="fas fa-bell"></i> <span>Notifications</span>
             </a>
             <div class="nav-section">System</div>
             <a class="nav-item ${state.currentPage === 'settings' ? 'active' : ''}" onclick="navigate('settings')">
-              <i class="fas fa-cog"></i> Settings
+              <i class="fas fa-cog"></i> <span>Settings</span>
             </a>
           </nav>
         </aside>
@@ -1251,9 +1615,8 @@
 
     const renderPageContent = () => {
       if (state.loading) {
-        return '<div class="loading"><div class="spinner"></div></div>';
+        return '<div class="loading"><div class="spinner"></div><span class="loading-text">Loading...</span></div>';
       }
-
       switch (state.currentPage) {
         case 'dashboard': return renderDashboard();
         case 'users': return renderUsers();
@@ -1309,13 +1672,7 @@
           <div class="card-body">
             ${state.stats?.recent?.games?.length ? `
               <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Plays</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Title</th><th>Plays</th><th>Date</th></tr></thead>
                 <tbody>
                   ${state.stats.recent.games.map(g => `
                     <tr>
@@ -1334,13 +1691,7 @@
           <div class="card-body">
             ${state.stats?.recent?.users?.length ? `
               <table>
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Joined</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>Username</th><th>Email</th><th>Joined</th></tr></thead>
                 <tbody>
                   ${state.stats.recent.users.map(u => `
                     <tr>
@@ -1359,61 +1710,29 @@
 
     const renderUsers = () => `
       <div class="card">
-        <div class="card-header">
-          <h3>All Users</h3>
-        </div>
+        <div class="card-header"><h3>All Users</h3></div>
         <div class="card-body">
           <div class="search-bar">
             <div class="search-input">
-              <i class="fas fa-search"></i>
               <input type="text" placeholder="Search users..." id="userSearch" onkeyup="debouncedLoadUsers()">
+              <i class="fas fa-search"></i>
             </div>
           </div>
           <table>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Joined</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
             <tbody>
               ${state.users.length ? state.users.map(u => `
                 <tr>
-                  <td>
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <div class="table-avatar">${escapeHtml(u.username.charAt(0).toUpperCase())}</div>
-                      <strong>${escapeHtml(u.username)}</strong>
-                    </div>
-                  </td>
+                  <td><div style="display:flex;align-items:center;gap:12px;"><div class="table-avatar">${escapeHtml(u.username.charAt(0).toUpperCase())}</div><strong>${escapeHtml(u.username)}</strong></div></td>
                   <td>${escapeHtml(u.email)}</td>
-                  <td>
-                    <span class="badge ${u.role === 'admin' ? 'badge-primary' : 'badge-info'}">
-                      ${escapeHtml(u.role)}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">
-                      ${u.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
+                  <td><span class="badge ${u.role === 'admin' ? 'badge-primary' : 'badge-info'}">${escapeHtml(u.role)}</span></td>
+                  <td><span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
                   <td>${new Date(u.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <div class="action-btns">
-                      <button class="action-btn toggle" onclick="toggleUserStatus(${u.id})" title="${u.is_active ? 'Deactivate' : 'Activate'}">
-                        <i class="fas fa-${u.is_active ? 'ban' : 'check'}"></i>
-                      </button>
-                      <button class="action-btn edit" onclick="changeUserRole(${u.id}, '${u.role}')" title="Change role">
-                        <i class="fas fa-user-shield"></i>
-                      </button>
-                      <button class="action-btn delete" onclick="confirmDeleteUser(${u.id}, '${escapeHtml(u.username)}')" title="Delete">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </td>
+                  <td><div class="action-btns">
+                    <button class="action-btn toggle" onclick="toggleUserStatus(${u.id})" title="${u.is_active ? 'Deactivate' : 'Activate'}"><i class="fas fa-${u.is_active ? 'ban' : 'check'}"></i></button>
+                    <button class="action-btn edit" onclick="changeUserRole(${u.id}, '${u.role}')" title="Change role"><i class="fas fa-user-shield"></i></button>
+                    <button class="action-btn delete" onclick="confirmDeleteUser(${u.id}, '${escapeHtml(u.username)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                  </div></td>
                 </tr>
               `).join('') : '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-users"></i><p>No users found</p></div></td></tr>'}
             </tbody>
@@ -1426,64 +1745,30 @@
       <div class="card">
         <div class="card-header">
           <h3>All Games</h3>
-          <button onclick="showGameModal()" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i> Add Game
-          </button>
+          <button onclick="showGameModal()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Game</button>
         </div>
         <div class="card-body">
           <div class="search-bar">
             <div class="search-input">
-              <i class="fas fa-search"></i>
               <input type="text" placeholder="Search games..." id="gameSearch" onkeyup="debouncedLoadGames()">
+              <i class="fas fa-search"></i>
             </div>
           </div>
           <table>
-            <thead>
-              <tr>
-                <th>Game</th>
-                <th>Category</th>
-                <th>Plays</th>
-                <th>Rating</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Game</th><th>Category</th><th>Plays</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               ${state.games.length ? state.games.map(g => `
                 <tr>
-                  <td>
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <img src="${escapeHtml(g.thumbnail || '/placeholder.png')}" class="game-thumb" alt="${escapeHtml(g.title)}">
-                      <div>
-                        <strong>${escapeHtml(g.title)}</strong>
-                        ${g.is_featured ? '<br><span class="badge badge-warning" style="font-size:9px;margin-top:4px;">Featured</span>' : ''}
-                      </div>
-                    </div>
-                  </td>
+                  <td><div style="display:flex;align-items:center;gap:12px;"><img src="${escapeHtml(g.thumbnail || '/placeholder.png')}" class="game-thumb" alt="${escapeHtml(g.title)}"><div><strong>${escapeHtml(g.title)}</strong>${g.is_featured ? '<br><span class="badge badge-warning" style="font-size:9px;margin-top:4px;">Featured</span>' : ''}</div></div></td>
                   <td><span class="badge badge-info">${escapeHtml(g.category || 'N/A')}</span></td>
                   <td>${g.plays?.toLocaleString() || 0}</td>
-                  <td>
-                    ${g.average_rating ? g.average_rating.toFixed(1) : '-'}
-                    <i class="fas fa-star" style="color:var(--brutal-yellow);font-size:11px;"></i>
-                  </td>
-                  <td>
-                    <span class="badge ${g.is_active ? 'badge-success' : 'badge-danger'}">
-                      ${g.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>
-                    <div class="action-btns">
-                      <button class="action-btn toggle" onclick="toggleGameActive(${g.id})" title="${g.is_active ? 'Deactivate' : 'Activate'}">
-                        <i class="fas fa-power-off"></i>
-                      </button>
-                      <button class="action-btn toggle" onclick="toggleGameFeatured(${g.id})" title="${g.is_featured ? 'Unfeature' : 'Feature'}">
-                        <i class="fas fa-star"></i>
-                      </button>
-                      <button class="action-btn delete" onclick="confirmDeleteGame(${g.id}, '${escapeHtml(g.title)}')" title="Delete">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </td>
+                  <td>${g.average_rating ? g.average_rating.toFixed(1) : '-'} <i class="fas fa-star" style="color:var(--accent);font-size:11px;"></i></td>
+                  <td><span class="badge ${g.is_active ? 'badge-success' : 'badge-danger'}">${g.is_active ? 'Active' : 'Inactive'}</span></td>
+                  <td><div class="action-btns">
+                    <button class="action-btn toggle" onclick="toggleGameActive(${g.id})" title="${g.is_active ? 'Deactivate' : 'Activate'}"><i class="fas fa-power-off"></i></button>
+                    <button class="action-btn toggle" onclick="toggleGameFeatured(${g.id})" title="${g.is_featured ? 'Unfeature' : 'Feature'}"><i class="fas fa-star"></i></button>
+                    <button class="action-btn delete" onclick="confirmDeleteGame(${g.id}, '${escapeHtml(g.title)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                  </div></td>
                 </tr>
               `).join('') : '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-gamepad"></i><p>No games found</p></div></td></tr>'}
             </tbody>
@@ -1501,45 +1786,20 @@
         <div class="card">
           <div class="card-header">
             <h3>In-App Notifications</h3>
-            <button onclick="showNotificationModal()" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus"></i> Create
-            </button>
+            <button onclick="showNotificationModal()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create</button>
           </div>
           <div class="card-body">
             <table>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Type</th>
-                  <th>Audience</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Title</th><th>Type</th><th>Audience</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
               <tbody>
                 ${state.notifications.length ? state.notifications.map(n => `
                   <tr>
                     <td><strong>${escapeHtml(n.title)}</strong></td>
-                    <td>
-                      <span class="badge badge-${n.type === 'error' ? 'danger' : n.type === 'warning' ? 'warning' : 'info'}">
-                        ${escapeHtml(n.type)}
-                      </span>
-                    </td>
+                    <td><span class="badge badge-${n.type === 'error' ? 'danger' : n.type === 'warning' ? 'warning' : 'info'}">${escapeHtml(n.type)}</span></td>
                     <td>${escapeHtml(n.target_audience)}</td>
-                    <td>
-                      <span class="badge ${n.is_active ? 'badge-success' : 'badge-danger'}">
-                        ${n.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
+                    <td><span class="badge ${n.is_active ? 'badge-success' : 'badge-danger'}">${n.is_active ? 'Active' : 'Inactive'}</span></td>
                     <td>${new Date(n.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <div class="action-btns">
-                        <button class="action-btn delete" onclick="confirmDeleteNotification(${n.id})" title="Delete">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </div>
-                    </td>
+                    <td><div class="action-btns"><button class="action-btn delete" onclick="confirmDeleteNotification(${n.id})" title="Delete"><i class="fas fa-trash"></i></button></div></td>
                   </tr>
                 `).join('') : '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-bell"></i><p>No notifications</p></div></td></tr>'}
               </tbody>
@@ -1549,29 +1809,13 @@
       </div>
       <div id="pushNotifications" class="tab-content">
         <div class="card">
-          <div class="card-header">
-            <h3>Send Push Notification</h3>
-          </div>
+          <div class="card-header"><h3>Send Push Notification</h3></div>
           <div class="card-body">
             <form onsubmit="sendPushNotification(event)">
-              <div class="form-group">
-                <label>Title</label>
-                <input type="text" id="pushTitle" required placeholder="Notification title">
-              </div>
-              <div class="form-group">
-                <label>Message</label>
-                <textarea id="pushMessage" required placeholder="Notification message" rows="4"></textarea>
-              </div>
-              <div class="form-group">
-                <label>Segment</label>
-                <select id="pushSegment">
-                  <option value="All">All Users</option>
-                  <option value="Active Users">Active Users</option>
-                </select>
-              </div>
-              <button type="submit" class="btn btn-primary">
-                <i class="fas fa-paper-plane"></i> Send Notification
-              </button>
+              <div class="form-group"><label>Title</label><input type="text" id="pushTitle" required placeholder="Notification title"></div>
+              <div class="form-group"><label>Message</label><textarea id="pushMessage" required placeholder="Notification message" rows="4"></textarea></div>
+              <div class="form-group"><label>Segment</label><select id="pushSegment"><option value="All">All Users</option><option value="Active Users">Active Users</option></select></div>
+              <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send Notification</button>
             </form>
           </div>
         </div>
@@ -1585,163 +1829,67 @@
         <div class="tab" onclick="switchSettingsTab('uploads', this)">Uploads</div>
         <div class="tab" onclick="switchSettingsTab('features', this)">Features</div>
       </div>
-
       <div id="generalSettings" class="tab-content active">
         <div class="card">
-          <div class="card-header">
-            <h3>General Settings</h3>
-            <button onclick="saveSettings()" class="btn btn-success btn-sm">
-              <i class="fas fa-save"></i> Save
-            </button>
-          </div>
+          <div class="card-header"><h3>General Settings</h3><button onclick="saveSettings()" class="btn btn-success btn-sm"><i class="fas fa-save"></i> Save</button></div>
           <div class="card-body">
             <div class="settings-section">
               <h4>Application</h4>
               <div class="settings-group">
-                <div class="setting-item">
-                  <label>App Name</label>
-                  <input type="text" id="setting_app_name" value="${escapeHtml(state.settings.app_name?.value || '')}">
-                </div>
-                <div class="setting-item">
-                  <label>App Version</label>
-                  <input type="text" id="setting_app_version" value="${escapeHtml(state.settings.app_version?.value || '')}">
-                </div>
-                <div class="setting-item">
-                  <label>Support Email</label>
-                  <input type="email" id="setting_support_email" value="${escapeHtml(state.settings.support_email?.value || '')}">
-                </div>
+                <div class="setting-item"><label>App Name</label><input type="text" id="setting_app_name" value="${escapeHtml(state.settings.app_name?.value || '')}"></div>
+                <div class="setting-item"><label>App Version</label><input type="text" id="setting_app_version" value="${escapeHtml(state.settings.app_version?.value || '')}"></div>
+                <div class="setting-item"><label>Support Email</label><input type="email" id="setting_support_email" value="${escapeHtml(state.settings.support_email?.value || '')}"></div>
               </div>
             </div>
             <div class="settings-section">
               <h4>Maintenance</h4>
               <div class="settings-group">
-                <div class="setting-item">
-                  <label>Maintenance Mode</label>
-                  <label class="toggle">
-                    <input type="checkbox" id="setting_maintenance_mode" ${state.settings.maintenance_mode?.value ? 'checked' : ''}>
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <div class="help-text">Show maintenance message to users</div>
-                </div>
+                <div class="setting-item"><label>Maintenance Mode</label><label class="toggle"><input type="checkbox" id="setting_maintenance_mode" ${state.settings.maintenance_mode?.value ? 'checked' : ''}><span class="toggle-slider"></span></label><div class="help-text">Show maintenance message to users</div></div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
       <div id="onesignalSettings" class="tab-content">
         <div class="card">
-          <div class="card-header">
-            <h3>OneSignal Config</h3>
-            <button onclick="saveSettings()" class="btn btn-success btn-sm">
-              <i class="fas fa-save"></i> Save
-            </button>
-          </div>
+          <div class="card-header"><h3>OneSignal Config</h3><button onclick="saveSettings()" class="btn btn-success btn-sm"><i class="fas fa-save"></i> Save</button></div>
           <div class="card-body">
             <div class="settings-section">
               <h4>Configuration</h4>
               <div class="settings-group">
-                <div class="setting-item">
-                  <label>Enable OneSignal</label>
-                  <label class="toggle">
-                    <input type="checkbox" id="setting_onesignal_enabled" ${state.settings.onesignal_enabled?.value ? 'checked' : ''}>
-                    <span class="toggle-slider"></span>
-                  </label>
-                </div>
-                <div class="setting-item">
-                  <label>App ID</label>
-                  <input type="text" id="setting_onesignal_app_id" value="${escapeHtml(state.settings.onesignal_app_id?.value || '')}" placeholder="OneSignal App ID">
-                  <div class="help-text">Find in OneSignal Dashboard > Settings</div>
-                </div>
-                <div class="setting-item">
-                  <label>REST API Key</label>
-                  <input type="password" id="setting_onesignal_api_key" value="${escapeHtml(state.settings.onesignal_api_key?.value || '')}" placeholder="REST API Key">
-                  <div class="help-text">Keep this secret!</div>
-                </div>
+                <div class="setting-item"><label>Enable OneSignal</label><label class="toggle"><input type="checkbox" id="setting_onesignal_enabled" ${state.settings.onesignal_enabled?.value ? 'checked' : ''}><span class="toggle-slider"></span></label></div>
+                <div class="setting-item"><label>App ID</label><input type="text" id="setting_onesignal_app_id" value="${escapeHtml(state.settings.onesignal_app_id?.value || '')}" placeholder="OneSignal App ID"><div class="help-text">Find in OneSignal Dashboard</div></div>
+                <div class="setting-item"><label>REST API Key</label><input type="password" id="setting_onesignal_api_key" value="${escapeHtml(state.settings.onesignal_api_key?.value || '')}" placeholder="REST API Key"><div class="help-text">Keep this secret!</div></div>
               </div>
             </div>
-            <button onclick="testOneSignal()" class="btn btn-info" style="margin-top:20px;">
-              <i class="fas fa-plug"></i> Test Connection
-            </button>
+            <button onclick="testOneSignal()" class="btn btn-info" style="margin-top:20px;"><i class="fas fa-plug"></i> Test Connection</button>
           </div>
         </div>
       </div>
-
       <div id="uploadsSettings" class="tab-content">
         <div class="card">
-          <div class="card-header">
-            <h3>Upload Settings</h3>
-            <button onclick="saveSettings()" class="btn btn-success btn-sm">
-              <i class="fas fa-save"></i> Save
-            </button>
-          </div>
+          <div class="card-header"><h3>Upload Settings</h3><button onclick="saveSettings()" class="btn btn-success btn-sm"><i class="fas fa-save"></i> Save</button></div>
           <div class="card-body">
             <div class="settings-section">
               <h4>File Size Limits</h4>
               <div class="settings-group">
-                <div class="setting-item">
-                  <label>Max Game Size (MB)</label>
-                  <input type="number" id="setting_max_upload_size" value="${state.settings.max_upload_size?.value || 100}" min="1" max="500">
-                  <div class="help-text">Maximum ZIP file size for games</div>
-                </div>
-                <div class="setting-item">
-                  <label>Max Thumbnail (MB)</label>
-                  <input type="number" id="setting_max_thumbnail_size" value="${state.settings.max_thumbnail_size?.value || 5}" min="1" max="20">
-                  <div class="help-text">Maximum thumbnail size</div>
-                </div>
+                <div class="setting-item"><label>Max Game Size (MB)</label><input type="number" id="setting_max_upload_size" value="${state.settings.max_upload_size?.value || 100}" min="1" max="500"><div class="help-text">Maximum ZIP file size</div></div>
+                <div class="setting-item"><label>Max Thumbnail (MB)</label><input type="number" id="setting_max_thumbnail_size" value="${state.settings.max_thumbnail_size?.value || 5}" min="1" max="20"><div class="help-text">Maximum thumbnail size</div></div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
       <div id="featuresSettings" class="tab-content">
         <div class="card">
-          <div class="card-header">
-            <h3>Feature Toggles</h3>
-            <button onclick="saveSettings()" class="btn btn-success btn-sm">
-              <i class="fas fa-save"></i> Save
-            </button>
-          </div>
+          <div class="card-header"><h3>Feature Toggles</h3><button onclick="saveSettings()" class="btn btn-success btn-sm"><i class="fas fa-save"></i> Save</button></div>
           <div class="card-body">
             <div class="settings-group">
-              <div class="setting-item">
-                <label>User Registration</label>
-                <label class="toggle">
-                  <input type="checkbox" id="setting_registration_enabled" ${state.settings.registration_enabled?.value ? 'checked' : ''}>
-                  <span class="toggle-slider"></span>
-                </label>
-                <div class="help-text">Allow new registrations</div>
-              </div>
-              <div class="setting-item">
-                <label>Guest Play</label>
-                <label class="toggle">
-                  <input type="checkbox" id="setting_guest_play_enabled" ${state.settings.guest_play_enabled?.value ? 'checked' : ''}>
-                  <span class="toggle-slider"></span>
-                </label>
-                <div class="help-text">Play without account</div>
-              </div>
-              <div class="setting-item">
-                <label>Ratings</label>
-                <label class="toggle">
-                  <input type="checkbox" id="setting_ratings_enabled" ${state.settings.ratings_enabled?.value ? 'checked' : ''}>
-                  <span class="toggle-slider"></span>
-                </label>
-                <div class="help-text">Enable game ratings</div>
-              </div>
-              <div class="setting-item">
-                <label>Analytics</label>
-                <label class="toggle">
-                  <input type="checkbox" id="setting_analytics_enabled" ${state.settings.analytics_enabled?.value ? 'checked' : ''}>
-                  <span class="toggle-slider"></span>
-                </label>
-                <div class="help-text">Track usage analytics</div>
-              </div>
-              <div class="setting-item">
-                <label>Featured Count</label>
-                <input type="number" id="setting_featured_games_count" value="${state.settings.featured_games_count?.value || 10}" min="1" max="50">
-                <div class="help-text">Number of featured games</div>
-              </div>
+              <div class="setting-item"><label>User Registration</label><label class="toggle"><input type="checkbox" id="setting_registration_enabled" ${state.settings.registration_enabled?.value ? 'checked' : ''}><span class="toggle-slider"></span></label><div class="help-text">Allow new registrations</div></div>
+              <div class="setting-item"><label>Guest Play</label><label class="toggle"><input type="checkbox" id="setting_guest_play_enabled" ${state.settings.guest_play_enabled?.value ? 'checked' : ''}><span class="toggle-slider"></span></label><div class="help-text">Play without account</div></div>
+              <div class="setting-item"><label>Ratings</label><label class="toggle"><input type="checkbox" id="setting_ratings_enabled" ${state.settings.ratings_enabled?.value ? 'checked' : ''}><span class="toggle-slider"></span></label><div class="help-text">Enable game ratings</div></div>
+              <div class="setting-item"><label>Analytics</label><label class="toggle"><input type="checkbox" id="setting_analytics_enabled" ${state.settings.analytics_enabled?.value ? 'checked' : ''}><span class="toggle-slider"></span></label><div class="help-text">Track usage analytics</div></div>
+              <div class="setting-item"><label>Featured Count</label><input type="number" id="setting_featured_games_count" value="${state.settings.featured_games_count?.value || 10}" min="1" max="50"><div class="help-text">Number of featured games</div></div>
             </div>
           </div>
         </div>
@@ -1753,27 +1901,14 @@
       e.preventDefault();
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
-
-      if (!email || !password) {
-        showToast('Please fill in all fields', 'error');
-        return;
-      }
-
+      if (!email || !password) { showToast('Please fill in all fields', 'error'); return; }
       try {
-        const data = await api('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email, password })
-        });
-
-        if (data.data.role !== 'admin') {
-          showToast('Admin access required', 'error');
-          return;
-        }
-
+        const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+        if (data.data.role !== 'admin') { showToast('Admin access required', 'error'); return; }
         state.token = data.data.token;
         state.user = data.data;
         localStorage.setItem('adminToken', data.data.token);
-        startAutoSync(); // Start auto-sync after login
+        startAutoSync();
         showToast('Login successful!', 'success');
         render();
       } catch (error) {
@@ -1804,7 +1939,6 @@
     // ==================== DATA LOADING ====================
     const loadPageData = async () => {
       state.loading = true;
-
       try {
         switch (state.currentPage) {
           case 'dashboard': await loadStats(); break;
@@ -1820,122 +1954,24 @@
       }
     };
 
-    const loadStats = async () => {
-      const data = await api('/admin/stats');
-      state.stats = data.data;
-      render();
-    };
-
-    const loadUsers = async () => {
-      const search = document.getElementById('userSearch')?.value || '';
-      const data = await api(`/admin/users?search=${encodeURIComponent(search)}`);
-      state.users = data.data || [];
-      render();
-    };
-
-    const loadGames = async () => {
-      const search = document.getElementById('gameSearch')?.value || '';
-      const data = await api(`/admin/games?search=${encodeURIComponent(search)}`);
-      state.games = data.data || [];
-      render();
-    };
-
-    const loadNotifications = async () => {
-      const data = await api('/admin/notifications');
-      state.notifications = data.data || [];
-      render();
-    };
-
-    const loadSettings = async () => {
-      const data = await api('/admin/settings');
-      state.settings = data.data || {};
-      render();
-    };
+    const loadStats = async () => { const data = await api('/admin/stats'); state.stats = data.data; render(); };
+    const loadUsers = async () => { const search = document.getElementById('userSearch')?.value || ''; const data = await api(`/admin/users?search=${encodeURIComponent(search)}`); state.users = data.data || []; render(); };
+    const loadGames = async () => { const search = document.getElementById('gameSearch')?.value || ''; const data = await api(`/admin/games?search=${encodeURIComponent(search)}`); state.games = data.data || []; render(); };
+    const loadNotifications = async () => { const data = await api('/admin/notifications'); state.notifications = data.data || []; render(); };
+    const loadSettings = async () => { const data = await api('/admin/settings'); state.settings = data.data || {}; render(); };
 
     // ==================== USER ACTIONS ====================
-    const toggleUserStatus = async (id) => {
-      try {
-        await api(`/admin/users/${id}/toggle-active`, { method: 'PUT' });
-        showToast('User status updated', 'success');
-        loadUsers();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    };
-
-    const changeUserRole = async (id, currentRole) => {
-      const newRole = currentRole === 'admin' ? 'user' : 'admin';
-      showConfirm(`Change role to ${newRole}?`, async () => {
-        try {
-          await api(`/admin/users/${id}/role`, {
-            method: 'PUT',
-            body: JSON.stringify({ role: newRole })
-          });
-          showToast('Role updated', 'success');
-          loadUsers();
-        } catch (error) {
-          showToast(error.message, 'error');
-        }
-      });
-    };
-
-    const confirmDeleteUser = (id, username) => {
-      showConfirm(`Delete user "${username}"? This cannot be undone.`, async () => {
-        try {
-          await api(`/admin/users/${id}`, { method: 'DELETE' });
-          showToast('User deleted', 'success');
-          loadUsers();
-        } catch (error) {
-          showToast(error.message, 'error');
-        }
-      });
-    };
+    const toggleUserStatus = async (id) => { try { await api(`/admin/users/${id}/toggle-active`, { method: 'PUT' }); showToast('User status updated', 'success'); loadUsers(); } catch (error) { showToast(error.message, 'error'); } };
+    const changeUserRole = async (id, currentRole) => { const newRole = currentRole === 'admin' ? 'user' : 'admin'; showConfirm(`Change role to ${newRole}?`, async () => { try { await api(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role: newRole }) }); showToast('Role updated', 'success'); loadUsers(); } catch (error) { showToast(error.message, 'error'); } }); };
+    const confirmDeleteUser = (id, username) => { showConfirm(`Delete user "${username}"?`, async () => { try { await api(`/admin/users/${id}`, { method: 'DELETE' }); showToast('User deleted', 'success'); loadUsers(); } catch (error) { showToast(error.message, 'error'); } }); };
 
     // ==================== GAME ACTIONS ====================
-    const toggleGameFeatured = async (id) => {
-      try {
-        await api(`/admin/games/${id}/toggle-featured`, { method: 'PUT' });
-        showToast('Featured status updated', 'success');
-        loadGames();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    };
-
-    const toggleGameActive = async (id) => {
-      try {
-        await api(`/admin/games/${id}/toggle-active`, { method: 'PUT' });
-        showToast('Game status updated', 'success');
-        loadGames();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    };
-
-    const confirmDeleteGame = (id, title) => {
-      showConfirm(`Delete game "${title}"? This cannot be undone.`, async () => {
-        try {
-          await api(`/admin/games/${id}`, { method: 'DELETE' });
-          showToast('Game deleted', 'success');
-          loadGames();
-        } catch (error) {
-          showToast(error.message, 'error');
-        }
-      });
-    };
+    const toggleGameFeatured = async (id) => { try { await api(`/admin/games/${id}/toggle-featured`, { method: 'PUT' }); showToast('Featured status updated', 'success'); loadGames(); } catch (error) { showToast(error.message, 'error'); } };
+    const toggleGameActive = async (id) => { try { await api(`/admin/games/${id}/toggle-active`, { method: 'PUT' }); showToast('Game status updated', 'success'); loadGames(); } catch (error) { showToast(error.message, 'error'); } };
+    const confirmDeleteGame = (id, title) => { showConfirm(`Delete game "${title}"?`, async () => { try { await api(`/admin/games/${id}`, { method: 'DELETE' }); showToast('Game deleted', 'success'); loadGames(); } catch (error) { showToast(error.message, 'error'); } }); };
 
     // ==================== NOTIFICATION ACTIONS ====================
-    const confirmDeleteNotification = (id) => {
-      showConfirm('Delete this notification?', async () => {
-        try {
-          await api(`/admin/notifications/${id}`, { method: 'DELETE' });
-          showToast('Notification deleted', 'success');
-          loadNotifications();
-        } catch (error) {
-          showToast(error.message, 'error');
-        }
-      });
-    };
+    const confirmDeleteNotification = (id) => { showConfirm('Delete this notification?', async () => { try { await api(`/admin/notifications/${id}`, { method: 'DELETE' }); showToast('Notification deleted', 'success'); loadNotifications(); } catch (error) { showToast(error.message, 'error'); } }); };
 
     // ==================== SETTINGS ACTIONS ====================
     const saveSettings = async () => {
@@ -1944,160 +1980,55 @@
         const key = input.id.replace('setting_', '');
         settings[key] = input.type === 'checkbox' ? input.checked : input.value;
       });
-
-      try {
-        await api('/admin/settings', {
-          method: 'PUT',
-          body: JSON.stringify({ settings })
-        });
-        showToast('Settings saved', 'success');
-        loadSettings();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
+      try { await api('/admin/settings', { method: 'PUT', body: JSON.stringify({ settings }) }); showToast('Settings saved', 'success'); loadSettings(); } catch (error) { showToast(error.message, 'error'); }
     };
 
     const testOneSignal = async () => {
       try {
         const appId = document.getElementById('setting_onesignal_app_id').value;
         const apiKey = document.getElementById('setting_onesignal_api_key').value;
-
-        if (!appId || !apiKey) {
-          showToast('Please enter App ID and API Key', 'error');
-          return;
-        }
-
-        const data = await api('/admin/test-onesignal', {
-          method: 'POST',
-          body: JSON.stringify({ appId, apiKey })
-        });
-
-        if (data.data && data.data.appName) {
-          showToast(`Connected! App: ${data.data.appName}, Players: ${data.data.players || 0}`, 'success');
-        } else {
-          showToast('Connection successful!', 'success');
-        }
-      } catch (error) {
-        showToast(error.message || 'Connection failed', 'error');
-      }
+        if (!appId || !apiKey) { showToast('Please enter App ID and API Key', 'error'); return; }
+        const data = await api('/admin/test-onesignal', { method: 'POST', body: JSON.stringify({ appId, apiKey }) });
+        if (data.data && data.data.appName) { showToast(`Connected! App: ${data.data.appName}`, 'success'); } else { showToast('Connection successful!', 'success'); }
+      } catch (error) { showToast(error.message || 'Connection failed', 'error'); }
     };
 
     const sendPushNotification = async (e) => {
       e.preventDefault();
-
       const title = document.getElementById('pushTitle').value.trim();
       const message = document.getElementById('pushMessage').value.trim();
       const segment = document.getElementById('pushSegment').value;
-
-      if (!title || !message) {
-        showToast('Please fill in all fields', 'error');
-        return;
-      }
-
-      try {
-        await api('/admin/push-notifications', {
-          method: 'POST',
-          body: JSON.stringify({ title, message, segment })
-        });
-        showToast('Push notification sent!', 'success');
-        document.getElementById('pushTitle').value = '';
-        document.getElementById('pushMessage').value = '';
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
+      if (!title || !message) { showToast('Please fill in all fields', 'error'); return; }
+      try { await api('/admin/push-notifications', { method: 'POST', body: JSON.stringify({ title, message, segment }) }); showToast('Push notification sent!', 'success'); document.getElementById('pushTitle').value = ''; document.getElementById('pushMessage').value = ''; } catch (error) { showToast(error.message, 'error'); }
     };
 
     // ==================== MODAL FUNCTIONS ====================
     const showGameModal = () => {
       const content = `
-        <form id="gameForm" onsubmit="createGame(event)" enctype="multipart/form-data">
-          <div class="form-group">
-            <label>Game Title *</label>
-            <input type="text" id="gameTitle" required placeholder="Enter game title">
-          </div>
-          <div class="form-group">
-            <label>Description *</label>
-            <textarea id="gameDescription" required placeholder="Game description" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Category</label>
-            <select id="gameCategory">
-              <option value="action">Action</option>
-              <option value="puzzle">Puzzle</option>
-              <option value="arcade">Arcade</option>
-              <option value="sports">Sports</option>
-              <option value="racing">Racing</option>
-              <option value="strategy">Strategy</option>
-              <option value="casual" selected>Casual</option>
-              <option value="adventure">Adventure</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Difficulty</label>
-            <select id="gameDifficulty">
-              <option value="easy">Easy</option>
-              <option value="medium" selected>Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Tags (comma separated)</label>
-            <input type="text" id="gameTags" placeholder="fun, multiplayer, classic">
-          </div>
-          <div class="form-group">
-            <label>Controls</label>
-            <textarea id="gameControls" placeholder="Arrow keys to move, Space to jump" rows="2"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Game File (ZIP) *</label>
-            <div class="file-upload-area" onclick="document.getElementById('gameFile').click()">
-              <i class="fas fa-file-archive"></i>
-              <p id="gameFileName">Click to select ZIP file containing index.html</p>
-            </div>
-            <input type="file" id="gameFile" accept=".zip" style="display:none" onchange="handleFileSelect(this, 'gameFileName')">
-          </div>
-          <div class="form-group">
-            <label>Thumbnail Image</label>
-            <div class="file-upload-area" onclick="document.getElementById('gameThumbnail').click()">
-              <i class="fas fa-image"></i>
-              <p id="thumbnailFileName">Click to select thumbnail image</p>
-            </div>
-            <input type="file" id="gameThumbnail" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'thumbnailFileName'); previewThumbnail(this)">
-            <img id="thumbnailPreview" style="display:none; max-width:200px; margin-top:10px; border-radius:8px;">
-          </div>
+        <form id="gameForm" onsubmit="createGame(event)">
+          <div class="form-group"><label>Game Title *</label><input type="text" id="gameTitle" required placeholder="Enter game title"></div>
+          <div class="form-group"><label>Description *</label><textarea id="gameDescription" required placeholder="Game description" rows="3"></textarea></div>
+          <div class="form-group"><label>Category</label><select id="gameCategory"><option value="action">Action</option><option value="puzzle">Puzzle</option><option value="arcade">Arcade</option><option value="sports">Sports</option><option value="racing">Racing</option><option value="strategy">Strategy</option><option value="casual" selected>Casual</option><option value="adventure">Adventure</option></select></div>
+          <div class="form-group"><label>Difficulty</label><select id="gameDifficulty"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></div>
+          <div class="form-group"><label>Tags (comma separated)</label><input type="text" id="gameTags" placeholder="fun, multiplayer, classic"></div>
+          <div class="form-group"><label>Controls</label><textarea id="gameControls" placeholder="Arrow keys to move, Space to jump" rows="2"></textarea></div>
+          <div class="form-group"><label>Game File (ZIP) *</label><div class="file-upload-area" onclick="document.getElementById('gameFile').click()"><i class="fas fa-file-archive"></i><p id="gameFileName">Click to select ZIP file</p></div><input type="file" id="gameFile" accept=".zip" style="display:none" onchange="handleFileSelect(this, 'gameFileName')"></div>
+          <div class="form-group"><label>Thumbnail Image</label><div class="file-upload-area" onclick="document.getElementById('gameThumbnail').click()"><i class="fas fa-image"></i><p id="thumbnailFileName">Click to select thumbnail</p></div><input type="file" id="gameThumbnail" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'thumbnailFileName'); previewThumbnail(this)"><img id="thumbnailPreview" style="display:none; max-width:200px; margin-top:10px; border-radius:8px;"></div>
         </form>
       `;
-
-      const footer = `
-        <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('gameForm').requestSubmit()">
-          <i class="fas fa-upload"></i> Upload Game
-        </button>
-      `;
-
+      const footer = `<button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="document.getElementById('gameForm').requestSubmit()"><i class="fas fa-upload"></i> Upload</button>`;
       showModal('Upload New Game', content, footer);
     };
 
     const handleFileSelect = (input, labelId) => {
       const file = input.files[0];
       if (file) {
-        // Validate file size based on type
         const isGameFile = input.id === 'gameFile';
-        const maxSize = isGameFile ? 100 * 1024 * 1024 : 5 * 1024 * 1024; // 100MB for games, 5MB for thumbnails
-        const maxSizeLabel = isGameFile ? '100MB' : '5MB';
-
-        if (file.size > maxSize) {
-          showToast(`File too large. Maximum: ${maxSizeLabel}`, 'error');
-          input.value = '';
-          return;
-        }
-
+        const maxSize = isGameFile ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
+        if (file.size > maxSize) { showToast(`File too large. Max: ${isGameFile ? '100MB' : '5MB'}`, 'error'); input.value = ''; return; }
         document.getElementById(labelId).textContent = file.name;
-        // Find the file-upload-area div and add has-file class
         const uploadArea = input.previousElementSibling;
-        if (uploadArea && uploadArea.classList.contains('file-upload-area')) {
-          uploadArea.classList.add('has-file');
-        }
+        if (uploadArea?.classList.contains('file-upload-area')) uploadArea.classList.add('has-file');
       }
     };
 
@@ -2105,204 +2036,77 @@
       const file = input.files[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          const preview = document.getElementById('thumbnailPreview');
-          preview.src = e.target.result;
-          preview.style.display = 'block';
-        };
+        reader.onload = (e) => { const preview = document.getElementById('thumbnailPreview'); preview.src = e.target.result; preview.style.display = 'block'; };
         reader.readAsDataURL(file);
       }
     };
 
     const createGame = async (e) => {
       e.preventDefault();
-
       const title = document.getElementById('gameTitle').value.trim();
       const description = document.getElementById('gameDescription').value.trim();
       const gameFile = document.getElementById('gameFile').files[0];
       const thumbnail = document.getElementById('gameThumbnail').files[0];
-
-      // Validate title
-      if (!title || title.length < 3 || title.length > 100) {
-        showToast('Title must be between 3-100 characters', 'error');
-        return;
-      }
-
-      // Validate description
-      if (!description || description.length < 10 || description.length > 500) {
-        showToast('Description must be between 10-500 characters', 'error');
-        return;
-      }
-
-      if (!gameFile) {
-        showToast('Please select a game ZIP file', 'error');
-        return;
-      }
-
-      // Validate file size (100MB max)
-      const maxGameSize = 100 * 1024 * 1024;
-      if (gameFile.size > maxGameSize) {
-        showToast('Game file too large. Maximum: 100MB', 'error');
-        return;
-      }
-
-      // Validate thumbnail size (5MB max)
-      if (thumbnail && thumbnail.size > 5 * 1024 * 1024) {
-        showToast('Thumbnail too large. Maximum: 5MB', 'error');
-        return;
-      }
-
+      if (!title || title.length < 3) { showToast('Title must be at least 3 characters', 'error'); return; }
+      if (!description || description.length < 10) { showToast('Description must be at least 10 characters', 'error'); return; }
+      if (!gameFile) { showToast('Please select a game ZIP file', 'error'); return; }
       const formData = new FormData();
       formData.append('title', title);
       formData.append('description', description);
       formData.append('category', document.getElementById('gameCategory').value);
       formData.append('difficulty', document.getElementById('gameDifficulty').value);
       formData.append('controls', document.getElementById('gameControls').value.trim());
-
-      // Parse tags as JSON array
-      const tags = document.getElementById('gameTags').value
-        .split(',')
-        .map(t => t.trim())
-        .filter(t => t);
+      const tags = document.getElementById('gameTags').value.split(',').map(t => t.trim()).filter(t => t);
       formData.append('tags', JSON.stringify(tags));
-
       formData.append('gameFile', gameFile);
-      if (thumbnail) {
-        formData.append('thumbnail', thumbnail);
-      }
-
+      if (thumbnail) formData.append('thumbnail', thumbnail);
       try {
-        const response = await fetch(`/api/admin/games`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${state.token}`
-          },
-          body: formData
-        });
-
+        const response = await fetch('/api/admin/games', { method: 'POST', headers: { 'Authorization': `Bearer ${state.token}` }, body: formData });
         const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || data.error || 'Failed to upload game');
-        }
-
-        showToast('Game uploaded successfully!', 'success');
+        if (!response.ok) throw new Error(data.message || 'Failed to upload');
+        showToast('Game uploaded!', 'success');
         closeModal();
         loadGames();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
+      } catch (error) { showToast(error.message, 'error'); }
     };
 
     const showNotificationModal = () => {
       const content = `
         <form id="notificationForm" onsubmit="createNotification(event)">
-          <div class="form-group">
-            <label>Title</label>
-            <input type="text" id="notifTitle" required placeholder="Notification title">
-          </div>
-          <div class="form-group">
-            <label>Message</label>
-            <textarea id="notifMessage" required placeholder="Notification message" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Type</label>
-            <select id="notifType">
-              <option value="info">Info</option>
-              <option value="success">Success</option>
-              <option value="warning">Warning</option>
-              <option value="error">Error</option>
-              <option value="promotion">Promotion</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Target Audience</label>
-            <select id="notifAudience">
-              <option value="all">All Users</option>
-              <option value="users">Users Only</option>
-              <option value="admins">Admins Only</option>
-            </select>
-          </div>
+          <div class="form-group"><label>Title</label><input type="text" id="notifTitle" required placeholder="Notification title"></div>
+          <div class="form-group"><label>Message</label><textarea id="notifMessage" required placeholder="Notification message" rows="3"></textarea></div>
+          <div class="form-group"><label>Type</label><select id="notifType"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option><option value="promotion">Promotion</option></select></div>
+          <div class="form-group"><label>Target Audience</label><select id="notifAudience"><option value="all">All Users</option><option value="users">Users Only</option><option value="admins">Admins Only</option></select></div>
         </form>
       `;
-
-      const footer = `
-        <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('notificationForm').requestSubmit()">
-          <i class="fas fa-plus"></i> Create
-        </button>
-      `;
-
+      const footer = `<button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="document.getElementById('notificationForm').requestSubmit()"><i class="fas fa-plus"></i> Create</button>`;
       showModal('Create Notification', content, footer);
     };
 
     const createNotification = async (e) => {
       e.preventDefault();
-
-      const notifData = {
-        title: document.getElementById('notifTitle').value.trim(),
-        message: document.getElementById('notifMessage').value.trim(),
-        type: document.getElementById('notifType').value,
-        target_audience: document.getElementById('notifAudience').value
-      };
-
-      try {
-        await api('/admin/notifications', {
-          method: 'POST',
-          body: JSON.stringify(notifData)
-        });
-        showToast('Notification created!', 'success');
-        closeModal();
-        loadNotifications();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
+      const notifData = { title: document.getElementById('notifTitle').value.trim(), message: document.getElementById('notifMessage').value.trim(), type: document.getElementById('notifType').value, target_audience: document.getElementById('notifAudience').value };
+      try { await api('/admin/notifications', { method: 'POST', body: JSON.stringify(notifData) }); showToast('Notification created!', 'success'); closeModal(); loadNotifications(); } catch (error) { showToast(error.message, 'error'); }
     };
 
     const showSetup = async () => {
       const content = `
         <form id="setupForm" onsubmit="handleSetup(event)">
-          <div class="form-group">
-            <label>Admin Username</label>
-            <input type="text" id="setupUsername" required placeholder="admin" minlength="3">
-          </div>
-          <div class="form-group">
-            <label>Admin Email</label>
-            <input type="email" id="setupEmail" required placeholder="admin@example.com">
-          </div>
-          <div class="form-group">
-            <label>Admin Password</label>
-            <input type="password" id="setupPassword" required placeholder="Strong password" minlength="6">
-          </div>
+          <div class="form-group"><label>Admin Username</label><input type="text" id="setupUsername" required placeholder="admin" minlength="3"></div>
+          <div class="form-group"><label>Admin Email</label><input type="email" id="setupEmail" required placeholder="admin@example.com"></div>
+          <div class="form-group"><label>Admin Password</label><input type="password" id="setupPassword" required placeholder="Strong password" minlength="6"></div>
         </form>
       `;
-
-      const footer = `
-        <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary btn-sm" onclick="document.getElementById('setupForm').requestSubmit()">
-          <i class="fas fa-user-plus"></i> Create Admin
-        </button>
-      `;
-
+      const footer = `<button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="document.getElementById('setupForm').requestSubmit()"><i class="fas fa-user-plus"></i> Create Admin</button>`;
       showModal('First Time Setup', content, footer);
     };
 
     const handleSetup = async (e) => {
       e.preventDefault();
-
       const username = document.getElementById('setupUsername').value.trim();
       const email = document.getElementById('setupEmail').value.trim();
       const password = document.getElementById('setupPassword').value;
-
-      try {
-        await api('/admin/setup', {
-          method: 'POST',
-          body: JSON.stringify({ username, email, password })
-        });
-        showToast('Admin created! You can now login.', 'success');
-        closeModal();
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
+      try { await api('/admin/setup', { method: 'POST', body: JSON.stringify({ username, email, password }) }); showToast('Admin created!', 'success'); closeModal(); } catch (error) { showToast(error.message, 'error'); }
     };
 
     // ==================== TAB SWITCHING ====================
@@ -2321,14 +2125,7 @@
     };
 
     // ==================== UTILITIES ====================
-    const debounce = (fn, delay) => {
-      let timeout;
-      return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => fn(...args), delay);
-      };
-    };
-
+    const debounce = (fn, delay) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => fn(...args), delay); }; };
     const debouncedLoadUsers = debounce(loadUsers, 500);
     const debouncedLoadGames = debounce(loadGames, 500);
 
@@ -2337,24 +2134,15 @@
       if (state.token) {
         try {
           const data = await api('/auth/me');
-          if (!data.data || data.data.role !== 'admin') {
-            handleLogout();
-            showToast('Admin access required', 'error');
-            return;
-          }
+          if (!data.data || data.data.role !== 'admin') { handleLogout(); showToast('Admin access required', 'error'); return; }
           state.user = data.data;
-          startAutoSync(); // Start auto-sync after successful auth
-        } catch (error) {
-          handleLogout();
-        }
+          startAutoSync();
+        } catch (error) { handleLogout(); }
       }
       render();
     };
 
-    // Start the app
     init();
-
-    // Cleanup on page unload
     window.addEventListener('beforeunload', stopAutoSync);
   </script>
 </body>
