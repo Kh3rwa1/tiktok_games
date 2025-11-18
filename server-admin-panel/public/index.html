@@ -1296,7 +1296,11 @@
       errors: {},
       lastSync: null,
       syncInterval: null,
-      isOnline: navigator.onLine
+      isOnline: navigator.onLine,
+      searchQueries: {
+        users: '',
+        games: ''
+      }
     };
 
     // ==================== AUTO-SYNC SYSTEM ====================
@@ -1659,7 +1663,7 @@
         <div class="card-body">
           <div class="search-bar">
             <div class="search-input">
-              <input type="text" placeholder="Search users..." id="userSearch" onkeyup="debouncedLoadUsers()">
+              <input type="text" placeholder="Search users..." id="userSearch" value="${escapeHtml(state.searchQueries.users)}" onkeyup="handleUserSearch(this.value)" oninput="state.searchQueries.users = this.value">
               <i class="fas fa-search"></i>
             </div>
           </div>
@@ -1675,8 +1679,8 @@
                   <td>${new Date(u.created_at).toLocaleDateString()}</td>
                   <td><div class="action-btns">
                     <button class="action-btn toggle" onclick="toggleUserStatus(${u.id})" title="${u.is_active ? 'Deactivate' : 'Activate'}"><i class="fas fa-${u.is_active ? 'ban' : 'check'}"></i></button>
-                    <button class="action-btn edit" onclick="changeUserRole(${u.id}, '${u.role}')" title="Change role"><i class="fas fa-user-shield"></i></button>
-                    <button class="action-btn delete" onclick="confirmDeleteUser(${u.id}, '${escapeHtml(u.username)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                    <button class="action-btn edit" onclick="changeUserRole(${u.id}, '${escapeHtml(u.role)}')" title="Change role"><i class="fas fa-user-shield"></i></button>
+                    <button class="action-btn delete" onclick="confirmDeleteUser(${u.id})" title="Delete"><i class="fas fa-trash"></i></button>
                   </div></td>
                 </tr>
               `).join('') : '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-users"></i><p>No users found</p></div></td></tr>'}
@@ -1695,7 +1699,7 @@
         <div class="card-body">
           <div class="search-bar">
             <div class="search-input">
-              <input type="text" placeholder="Search games..." id="gameSearch" onkeyup="debouncedLoadGames()">
+              <input type="text" placeholder="Search games..." id="gameSearch" value="${escapeHtml(state.searchQueries.games)}" onkeyup="handleGameSearch(this.value)" oninput="state.searchQueries.games = this.value">
               <i class="fas fa-search"></i>
             </div>
           </div>
@@ -1710,9 +1714,10 @@
                   <td>${g.average_rating ? g.average_rating.toFixed(1) : '-'} <i class="fas fa-star" style="color:var(--accent);font-size:11px;"></i></td>
                   <td><span class="badge ${g.is_active ? 'badge-success' : 'badge-danger'}">${g.is_active ? 'Active' : 'Inactive'}</span></td>
                   <td><div class="action-btns">
+                    <button class="action-btn edit" onclick="showEditGameModal(${g.id})" title="Edit"><i class="fas fa-edit"></i></button>
                     <button class="action-btn toggle" onclick="toggleGameActive(${g.id})" title="${g.is_active ? 'Deactivate' : 'Activate'}"><i class="fas fa-power-off"></i></button>
                     <button class="action-btn toggle" onclick="toggleGameFeatured(${g.id})" title="${g.is_featured ? 'Unfeature' : 'Feature'}"><i class="fas fa-star"></i></button>
-                    <button class="action-btn delete" onclick="confirmDeleteGame(${g.id}, '${escapeHtml(g.title)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                    <button class="action-btn delete" onclick="confirmDeleteGame(${g.id})" title="Delete"><i class="fas fa-trash"></i></button>
                   </div></td>
                 </tr>
               `).join('') : '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-gamepad"></i><p>No games found</p></div></td></tr>'}
@@ -1884,6 +1889,7 @@
     // ==================== DATA LOADING ====================
     const loadPageData = async () => {
       state.loading = true;
+      render(); // Show loading state immediately
       try {
         switch (state.currentPage) {
           case 'dashboard': await loadStats(); break;
@@ -1893,27 +1899,132 @@
           case 'settings': await loadSettings(); break;
         }
       } catch (error) {
-        showToast(`Error loading ${state.currentPage}`, 'error');
-      } finally {
+        console.error(`Error loading ${state.currentPage}:`, error);
+        showToast(`Error loading ${state.currentPage}: ${error.message}`, 'error');
         state.loading = false;
+        render(); // Re-render to clear loading state on error
       }
     };
 
-    const loadStats = async () => { const data = await api('/admin/stats'); state.stats = data.data; render(); };
-    const loadUsers = async () => { const search = document.getElementById('userSearch')?.value || ''; const data = await api(`/admin/users?search=${encodeURIComponent(search)}`); state.users = data.data || []; render(); };
-    const loadGames = async () => { const search = document.getElementById('gameSearch')?.value || ''; const data = await api(`/admin/games?search=${encodeURIComponent(search)}`); state.games = data.data || []; render(); };
-    const loadNotifications = async () => { const data = await api('/admin/notifications'); state.notifications = data.data || []; render(); };
-    const loadSettings = async () => { const data = await api('/admin/settings'); state.settings = data.data || {}; render(); };
+    const loadStats = async () => {
+      const data = await api('/admin/stats');
+      state.stats = data.data;
+      state.loading = false;
+      render();
+    };
+
+    const loadUsers = async () => {
+      const search = state.searchQueries.users || '';
+      const data = await api(`/admin/users?search=${encodeURIComponent(search)}`);
+      state.users = data.data || [];
+      state.loading = false;
+      render();
+    };
+
+    const loadGames = async () => {
+      const search = state.searchQueries.games || '';
+      const data = await api(`/admin/games?search=${encodeURIComponent(search)}`);
+      state.games = data.data || [];
+      state.loading = false;
+      render();
+    };
+
+    const loadNotifications = async () => {
+      const data = await api('/admin/notifications');
+      state.notifications = data.data || [];
+      state.loading = false;
+      render();
+    };
+
+    const loadSettings = async () => {
+      const data = await api('/admin/settings');
+      state.settings = data.data || {};
+      state.loading = false;
+      render();
+    };
 
     // ==================== USER ACTIONS ====================
-    const toggleUserStatus = async (id) => { try { await api(`/admin/users/${id}/toggle-active`, { method: 'PUT' }); showToast('User status updated', 'success'); loadUsers(); } catch (error) { showToast(error.message, 'error'); } };
-    const changeUserRole = async (id, currentRole) => { const newRole = currentRole === 'admin' ? 'user' : 'admin'; showConfirm(`Change role to ${newRole}?`, async () => { try { await api(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role: newRole }) }); showToast('Role updated', 'success'); loadUsers(); } catch (error) { showToast(error.message, 'error'); } }); };
-    const confirmDeleteUser = (id, username) => { showConfirm(`Delete user "${username}"?`, async () => { try { await api(`/admin/users/${id}`, { method: 'DELETE' }); showToast('User deleted', 'success'); loadUsers(); } catch (error) { showToast(error.message, 'error'); } }); };
+    const toggleUserStatus = async (id) => {
+      try {
+        await api(`/admin/users/${id}/toggle-active`, { method: 'PUT' });
+        showToast('User status updated', 'success');
+        loadUsers();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const changeUserRole = async (id, currentRole) => {
+      const newRole = currentRole === 'admin' ? 'user' : 'admin';
+      showConfirm(`Change role to ${newRole}?`, async () => {
+        try {
+          await api(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role: newRole }) });
+          showToast('Role updated', 'success');
+          loadUsers();
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      });
+    };
+
+    const confirmDeleteUser = (id) => {
+      const user = state.users.find(u => u.id === id);
+      const username = user ? user.username : 'Unknown';
+      showConfirm(`Delete user "${escapeHtml(username)}"? This action cannot be undone.`, async () => {
+        try {
+          await api(`/admin/users/${id}`, { method: 'DELETE' });
+          showToast('User deleted', 'success');
+          loadUsers();
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      });
+    };
+
+    const handleUserSearch = debounce((value) => {
+      state.searchQueries.users = value;
+      loadUsers();
+    }, 500);
 
     // ==================== GAME ACTIONS ====================
-    const toggleGameFeatured = async (id) => { try { await api(`/admin/games/${id}/toggle-featured`, { method: 'PUT' }); showToast('Featured status updated', 'success'); loadGames(); } catch (error) { showToast(error.message, 'error'); } };
-    const toggleGameActive = async (id) => { try { await api(`/admin/games/${id}/toggle-active`, { method: 'PUT' }); showToast('Game status updated', 'success'); loadGames(); } catch (error) { showToast(error.message, 'error'); } };
-    const confirmDeleteGame = (id, title) => { showConfirm(`Delete game "${title}"?`, async () => { try { await api(`/admin/games/${id}`, { method: 'DELETE' }); showToast('Game deleted', 'success'); loadGames(); } catch (error) { showToast(error.message, 'error'); } }); };
+    const toggleGameFeatured = async (id) => {
+      try {
+        await api(`/admin/games/${id}/toggle-featured`, { method: 'PUT' });
+        showToast('Featured status updated', 'success');
+        loadGames();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const toggleGameActive = async (id) => {
+      try {
+        await api(`/admin/games/${id}/toggle-active`, { method: 'PUT' });
+        showToast('Game status updated', 'success');
+        loadGames();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const confirmDeleteGame = (id) => {
+      const game = state.games.find(g => g.id === id);
+      const title = game ? game.title : 'Unknown';
+      showConfirm(`Delete game "${escapeHtml(title)}"? This will also delete all game files. This action cannot be undone.`, async () => {
+        try {
+          await api(`/admin/games/${id}`, { method: 'DELETE' });
+          showToast('Game deleted', 'success');
+          loadGames();
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      });
+    };
+
+    const handleGameSearch = debounce((value) => {
+      state.searchQueries.games = value;
+      loadGames();
+    }, 500);
 
     // ==================== NOTIFICATION ACTIONS ====================
     const confirmDeleteNotification = (id) => { showConfirm('Delete this notification?', async () => { try { await api(`/admin/notifications/${id}`, { method: 'DELETE' }); showToast('Notification deleted', 'success'); loadNotifications(); } catch (error) { showToast(error.message, 'error'); } }); };
@@ -2015,6 +2126,74 @@
       } catch (error) { showToast(error.message, 'error'); }
     };
 
+    const showEditGameModal = async (id) => {
+      const game = state.games.find(g => g.id === id);
+      if (!game) {
+        showToast('Game not found', 'error');
+        return;
+      }
+
+      const content = `
+        <form id="editGameForm" onsubmit="updateGame(event, ${id})">
+          <div class="form-group"><label>Game Title *</label><input type="text" id="editGameTitle" required value="${escapeHtml(game.title)}" placeholder="Enter game title"></div>
+          <div class="form-group"><label>Description *</label><textarea id="editGameDescription" required placeholder="Game description" rows="3">${escapeHtml(game.description || '')}</textarea></div>
+          <div class="form-group"><label>Category</label><select id="editGameCategory">
+            <option value="action" ${game.category === 'action' ? 'selected' : ''}>Action</option>
+            <option value="puzzle" ${game.category === 'puzzle' ? 'selected' : ''}>Puzzle</option>
+            <option value="arcade" ${game.category === 'arcade' ? 'selected' : ''}>Arcade</option>
+            <option value="sports" ${game.category === 'sports' ? 'selected' : ''}>Sports</option>
+            <option value="racing" ${game.category === 'racing' ? 'selected' : ''}>Racing</option>
+            <option value="strategy" ${game.category === 'strategy' ? 'selected' : ''}>Strategy</option>
+            <option value="casual" ${game.category === 'casual' ? 'selected' : ''}>Casual</option>
+            <option value="adventure" ${game.category === 'adventure' ? 'selected' : ''}>Adventure</option>
+          </select></div>
+          <div class="form-group"><label>Difficulty</label><select id="editGameDifficulty">
+            <option value="easy" ${game.difficulty === 'easy' ? 'selected' : ''}>Easy</option>
+            <option value="medium" ${game.difficulty === 'medium' ? 'selected' : ''}>Medium</option>
+            <option value="hard" ${game.difficulty === 'hard' ? 'selected' : ''}>Hard</option>
+          </select></div>
+          <div class="form-group"><label>Tags (comma separated)</label><input type="text" id="editGameTags" value="${escapeHtml(Array.isArray(game.tags) ? game.tags.join(', ') : (game.tags || ''))}" placeholder="fun, multiplayer, classic"></div>
+          <div class="form-group"><label>Controls</label><textarea id="editGameControls" placeholder="Arrow keys to move, Space to jump" rows="2">${escapeHtml(game.controls || '')}</textarea></div>
+          <div class="form-group"><label>New Game File (ZIP) - Optional</label><div class="file-upload-area" onclick="document.getElementById('editGameFile').click()"><i class="fas fa-file-archive"></i><p id="editGameFileName">Click to replace game files</p></div><input type="file" id="editGameFile" accept=".zip" style="display:none" onchange="handleFileSelect(this, 'editGameFileName')"></div>
+          <div class="form-group"><label>New Thumbnail - Optional</label><div class="file-upload-area" onclick="document.getElementById('editGameThumbnail').click()"><i class="fas fa-image"></i><p id="editThumbnailFileName">Click to replace thumbnail</p></div><input type="file" id="editGameThumbnail" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'editThumbnailFileName')"></div>
+          ${game.thumbnail ? `<div style="margin-top:10px;"><img src="${escapeHtml(game.thumbnail)}" style="max-width:200px;border-radius:8px;" alt="Current thumbnail"></div>` : ''}
+        </form>
+      `;
+      const footer = `<button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="document.getElementById('editGameForm').requestSubmit()"><i class="fas fa-save"></i> Save Changes</button>`;
+      showModal('Edit Game', content, footer);
+    };
+
+    const updateGame = async (e, id) => {
+      e.preventDefault();
+      const title = document.getElementById('editGameTitle').value.trim();
+      const description = document.getElementById('editGameDescription').value.trim();
+      const gameFile = document.getElementById('editGameFile').files[0];
+      const thumbnail = document.getElementById('editGameThumbnail').files[0];
+
+      if (!title || title.length < 3) { showToast('Title must be at least 3 characters', 'error'); return; }
+      if (!description || description.length < 10) { showToast('Description must be at least 10 characters', 'error'); return; }
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('category', document.getElementById('editGameCategory').value);
+      formData.append('difficulty', document.getElementById('editGameDifficulty').value);
+      formData.append('controls', document.getElementById('editGameControls').value.trim());
+      const tags = document.getElementById('editGameTags').value.split(',').map(t => t.trim()).filter(t => t);
+      formData.append('tags', JSON.stringify(tags));
+      if (gameFile) formData.append('gameFile', gameFile);
+      if (thumbnail) formData.append('thumbnail', thumbnail);
+
+      try {
+        const response = await fetch(`/api/admin/games/${id}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${state.token}` }, body: formData });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Failed to update');
+        showToast('Game updated!', 'success');
+        closeModal();
+        loadGames();
+      } catch (error) { showToast(error.message, 'error'); }
+    };
+
     const showNotificationModal = () => {
       const content = `
         <form id="notificationForm" onsubmit="createNotification(event)">
@@ -2063,9 +2242,15 @@
     };
 
     const switchSettingsTab = (tab, el) => {
-      document.querySelectorAll('#app .tabs .tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      // Only target settings tabs, not notification tabs
+      const settingsContainer = el.closest('.content');
+      settingsContainer.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
       el.classList.add('active');
+      // Hide all settings tab contents
+      ['generalSettings', 'onesignalSettings', 'uploadsSettings', 'featuresSettings'].forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.classList.remove('active');
+      });
       document.getElementById(tab + 'Settings').classList.add('active');
     };
 
