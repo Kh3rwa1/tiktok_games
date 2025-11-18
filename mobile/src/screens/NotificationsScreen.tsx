@@ -141,7 +141,7 @@ const NotificationItem = React.memo(({
         <Ionicons
           name="chevron-forward"
           size={20}
-          color="#666"
+          color="#000000"
           style={styles.chevron}
         />
       </TouchableOpacity>
@@ -242,7 +242,7 @@ export default function NotificationsScreen({ navigation }: Props) {
         entering={ZoomIn.springify()}
       >
         <Animated.View entering={FadeInDown.delay(100)}>
-          <Ionicons name="notifications-off-outline" size={80} color="#333" />
+          <Ionicons name="notifications-off-outline" size={80} color="#000000" />
         </Animated.View>
         <Animated.Text
           style={styles.emptyTitle}
@@ -262,15 +262,10 @@ export default function NotificationsScreen({ navigation }: Props) {
             onPress={onRefresh}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#FF0050', '#FF4500']}
-              style={styles.retryGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="refresh" size={20} color="#fff" />
+            <View style={styles.retryGradient}>
+              <Ionicons name="refresh" size={20} color="#000000" />
               <Text style={styles.retryText}>Refresh</Text>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>
@@ -288,7 +283,7 @@ export default function NotificationsScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Notifications</Text>
@@ -319,9 +314,9 @@ export default function NotificationsScreen({ navigation }: Props) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#FF0050"
-            colors={['#FF0050']}
-            progressBackgroundColor="#1a1a1a"
+            tintColor="#FF6B6B"
+            colors={['#FF6B6B']}
+            progressBackgroundColor="#FFFEF0"
           />
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -333,7 +328,7 @@ export default function NotificationsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FFFEF0',
   },
   header: {
     flexDirection: 'row',
@@ -341,16 +336,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    borderBottomWidth: 3,
+    borderBottomColor: '#000000',
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 8,
@@ -360,8 +355,8 @@ const styles = StyleSheet.create({
   },
   markAllText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#FF0050',
+    fontWeight: '900',
+    color: '#FF6B6B',
   },
   listContainer: {
     padding: 16,
@@ -372,22 +367,31 @@ const styles = StyleSheet.create({
   notificationItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111',
-    borderRadius: 12,
+    backgroundColor: '#FFFEF0',
+    borderRadius: 0,
     padding: 16,
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
   notificationItemUnread: {
-    backgroundColor: '#1a1a1a',
-    borderLeftWidth: 3,
-    borderLeftColor: '#FF0050',
+    backgroundColor: '#FFDE59',
+    borderLeftWidth: 6,
+    borderLeftColor: '#FF6B6B',
   },
   iconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#000000',
   },
   contentContainer: {
     flex: 1,
@@ -399,26 +403,30 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     flex: 1,
   },
   unreadDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF0050',
+    borderRadius: 0,
+    backgroundColor: '#FF6B6B',
     marginLeft: 8,
+    borderWidth: 1,
+    borderColor: '#000000',
   },
   message: {
     fontSize: 14,
-    color: '#999',
+    color: '#000000',
     lineHeight: 20,
     marginBottom: 4,
+    fontWeight: '700',
   },
   timestamp: {
     fontSize: 12,
-    color: '#666',
+    color: '#000000',
+    fontWeight: '700',
   },
   chevron: {
     marginLeft: 8,
@@ -434,26 +442,29 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginTop: 20,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#000000',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
+    fontWeight: '700',
   },
   retryButton: {
-    borderRadius: 30,
+    borderRadius: 0,
     overflow: 'hidden',
-    shadowColor: '#FF0050',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     elevation: 6,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   retryGradient: {
     flexDirection: 'row',
@@ -461,10 +472,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 16,
     gap: 8,
+    backgroundColor: '#FF6B6B',
   },
   retryText: {
-    color: '#fff',
+    color: '#000000',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '900',
   },
 });

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TikTok Games",
-    "slug": "tiktok-games",
+    "name": "Kisku",
+    "slug": "kisku",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,14 +10,14 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#FFFEF0"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.tiktokgames.app",
+      "bundleIdentifier": "com.kisku.app",
       "buildNumber": "1.0.0",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs camera access to upload profile pictures",
@@ -27,9 +27,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#FFFEF0"
       },
-      "package": "com.tiktokgames.app",
+      "package": "com.kisku.app",
       "versionCode": 1,
       "permissions": [
         "INTERNET",

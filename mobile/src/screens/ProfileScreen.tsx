@@ -223,10 +223,7 @@ export default function ProfileScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header Gradient */}
-      <LinearGradient
-        colors={['#1a0a1a', '#000']}
-        style={styles.headerGradient}
-      />
+      <View style={styles.headerGradient} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -235,12 +232,7 @@ export default function ProfileScreen({ navigation }: Props) {
         {/* Profile Header */}
         <Animated.View style={[styles.header, headerStyle]} entering={FadeIn}>
           <View style={styles.avatarContainer}>
-            <LinearGradient
-              colors={['#FF0050', '#FF4500']}
-              style={styles.avatarGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
+            <View style={styles.avatarGradient}>
               {user.avatar && !avatarError ? (
                 <Image
                   source={{ uri: user.avatar }}
@@ -248,19 +240,16 @@ export default function ProfileScreen({ navigation }: Props) {
                   onError={() => setAvatarError(true)}
                 />
               ) : (
-                <Ionicons name="person" size={60} color="#fff" />
+                <Ionicons name="person" size={60} color="#000000" />
               )}
-            </LinearGradient>
+            </View>
             <TouchableOpacity
               style={styles.editIconButton}
               onPress={handleEditProfile}
             >
-              <LinearGradient
-                colors={['#FF0050', '#FF4500']}
-                style={styles.editIconGradient}
-              >
-                <Ionicons name="pencil" size={16} color="#fff" />
-              </LinearGradient>
+              <View style={styles.editIconGradient}>
+                <Ionicons name="pencil" size={16} color="#000000" />
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -291,55 +280,43 @@ export default function ProfileScreen({ navigation }: Props) {
         >
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
-              <LinearGradient
-                colors={['#1a1a1a', '#0a0a0a']}
-                style={styles.statGradient}
-              >
-                <Ionicons name="game-controller" size={32} color="#FF0050" />
+              <View style={styles.statGradient}>
+                <Ionicons name="game-controller" size={32} color="#FF6B6B" />
                 <Text style={styles.statValue}>
                   {user.total_games_played || 0}
                 </Text>
                 <Text style={styles.statLabel}>Games Played</Text>
-              </LinearGradient>
+              </View>
             </View>
 
             <View style={styles.statCard}>
-              <LinearGradient
-                colors={['#1a1a1a', '#0a0a0a']}
-                style={styles.statGradient}
-              >
-                <Ionicons name="time" size={32} color="#FF4500" />
+              <View style={styles.statGradient}>
+                <Ionicons name="time" size={32} color="#4ECDC4" />
                 <Text style={styles.statValue}>
                   {formatPlayTime(user.total_play_time || 0)}
                 </Text>
                 <Text style={styles.statLabel}>Play Time</Text>
-              </LinearGradient>
+              </View>
             </View>
           </View>
 
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
-              <LinearGradient
-                colors={['#1a1a1a', '#0a0a0a']}
-                style={styles.statGradient}
-              >
-                <Ionicons name="videocam" size={32} color="#FF0050" />
+              <View style={styles.statGradient}>
+                <Ionicons name="videocam" size={32} color="#FF6B6B" />
                 <Text style={styles.statValue}>{user.games_count || 0}</Text>
                 <Text style={styles.statLabel}>Games Created</Text>
-              </LinearGradient>
+              </View>
             </View>
 
             <View style={styles.statCard}>
-              <LinearGradient
-                colors={['#1a1a1a', '#0a0a0a']}
-                style={styles.statGradient}
-              >
-                <Ionicons name="trophy" size={32} color="#FFD700" />
+              <View style={styles.statGradient}>
+                <Ionicons name="trophy" size={32} color="#FFDE59" />
                 <Text style={styles.statValue}>
                   {user.role === 'admin' ? 'Admin' : 'Player'}
                 </Text>
                 <Text style={styles.statLabel}>Role</Text>
-              </LinearGradient>
+              </View>
             </View>
           </View>
         </Animated.View>
@@ -370,7 +347,7 @@ export default function ProfileScreen({ navigation }: Props) {
           <Text style={styles.infoTitle}>Account Information</Text>
 
           <View style={styles.infoItem}>
-            <Ionicons name="calendar" size={20} color="#666" />
+            <Ionicons name="calendar" size={20} color="#000000" />
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoLabel}>Member Since</Text>
               <Text style={styles.infoValue}>
@@ -384,7 +361,7 @@ export default function ProfileScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.infoItem}>
-            <Ionicons name="shield-checkmark" size={20} color="#666" />
+            <Ionicons name="shield-checkmark" size={20} color="#000000" />
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoLabel}>Account Status</Text>
               <Text style={[styles.infoValue, { color: '#34C759' }]}>
@@ -411,8 +388,7 @@ export default function ProfileScreen({ navigation }: Props) {
             style={styles.modalContent}
             entering={FadeInDown.springify()}
           >
-            <LinearGradient
-              colors={['#1a1a1a', '#0a0a0a']}
+            <View
               style={[styles.modalGradient, { paddingBottom: Math.max(insets.bottom, 20) }]}
             >
               {/* Modal Header */}
@@ -422,7 +398,7 @@ export default function ProfileScreen({ navigation }: Props) {
                   onPress={() => setShowEditModal(false)}
                   disabled={isUpdating}
                 >
-                  <Ionicons name="close" size={28} color="#fff" />
+                  <Ionicons name="close" size={28} color="#000000" />
                 </TouchableOpacity>
               </View>
 
@@ -481,7 +457,7 @@ export default function ProfileScreen({ navigation }: Props) {
                   style={styles.modalButton}
                 />
               </View>
-            </LinearGradient>
+            </View>
           </Animated.View>
         </KeyboardAvoidingView>
       </Modal>
@@ -492,11 +468,11 @@ export default function ProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FFFEF0',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FFFEF0',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -507,6 +483,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 300,
+    backgroundColor: '#4ECDC4',
   },
   scrollContent: {
     paddingBottom: 40,
@@ -523,22 +500,30 @@ const styles = StyleSheet.create({
   avatarGradient: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 4,
+    backgroundColor: '#FF6B6B',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   avatar: {
     width: 112,
     height: 112,
-    borderRadius: 56,
-    backgroundColor: '#1a1a1a',
+    borderRadius: 0,
+    backgroundColor: '#FFFEF0',
   },
   editIconButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    borderRadius: 18,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   editIconGradient: {
@@ -546,19 +531,23 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFDE59',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   username: {
     fontSize: 28,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginBottom: 8,
   },
   bio: {
     fontSize: 16,
-    color: '#999',
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 8,
     paddingHorizontal: 20,
+    fontWeight: '700',
   },
   socialStats: {
     flexDirection: 'row',
@@ -572,13 +561,13 @@ const styles = StyleSheet.create({
   },
   socialStatValue: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
   },
   socialStatLabel: {
     fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
+    color: '#000000',
+    fontWeight: '700',
     marginTop: 4,
   },
   statsContainer: {
@@ -592,27 +581,33 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   statGradient: {
     padding: 20,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#000000',
+    borderRadius: 0,
+    backgroundColor: '#FFFEF0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
   },
   statValue: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginTop: 12,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
+    color: '#000000',
+    fontWeight: '700',
   },
   actionsContainer: {
     paddingHorizontal: 20,
@@ -631,19 +626,24 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginBottom: 16,
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
+    backgroundColor: '#FFFEF0',
+    borderRadius: 0,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
   infoTextContainer: {
     marginLeft: 16,
@@ -651,14 +651,14 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
+    color: '#000000',
+    fontWeight: '700',
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
+    color: '#000000',
+    fontWeight: '900',
   },
   modalOverlay: {
     flex: 1,
@@ -666,12 +666,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#000000',
+    borderBottomWidth: 0,
   },
   modalGradient: {
     paddingTop: 24,
+    backgroundColor: '#FFFEF0',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -682,8 +686,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
   },
   modalBody: {
     paddingHorizontal: 24,
@@ -694,19 +698,19 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#999',
+    fontWeight: '700',
+    color: '#000000',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: 12,
+    backgroundColor: '#FFFEF0',
+    borderRadius: 0,
     padding: 16,
-    color: '#fff',
+    color: '#000000',
     fontSize: 16,
-    fontWeight: '500',
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
+    fontWeight: '700',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   textArea: {
     height: 120,
@@ -714,9 +718,10 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: 12,
-    color: '#666',
+    color: '#000000',
     textAlign: 'right',
     marginTop: 8,
+    fontWeight: '700',
   },
   modalActions: {
     flexDirection: 'row',

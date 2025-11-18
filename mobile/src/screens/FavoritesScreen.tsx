@@ -100,14 +100,9 @@ export default function FavoritesScreen() {
         activeOpacity={0.7}
       >
         {isSelected ? (
-          <LinearGradient
-            colors={['#FF0050', '#FF4500']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.sortChip}
-          >
+          <View style={styles.sortChip}>
             <Text style={styles.sortChipTextSelected}>{item.label}</Text>
-          </LinearGradient>
+          </View>
         ) : (
           <View style={styles.sortChipInactive}>
             <Text style={styles.sortChipText}>{item.label}</Text>
@@ -137,14 +132,9 @@ export default function FavoritesScreen() {
       entering={FadeIn.delay(200)}
       style={styles.emptyState}
     >
-      <LinearGradient
-        colors={['#FF0050', '#FF4500']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.emptyIconContainer}
-      >
-        <Ionicons name="heart" size={60} color="#fff" />
-      </LinearGradient>
+      <View style={styles.emptyIconContainer}>
+        <Ionicons name="heart" size={60} color="#000000" />
+      </View>
       <Text style={styles.emptyTitle}>No Favorites Yet</Text>
       <Text style={styles.emptyText}>
         Games you favorite will appear here.{'\n'}
@@ -155,15 +145,10 @@ export default function FavoritesScreen() {
         style={styles.exploreButton}
         activeOpacity={0.8}
       >
-        <LinearGradient
-          colors={['#FF0050', '#FF4500']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.exploreButtonGradient}
-        >
-          <Ionicons name="compass" size={20} color="#fff" style={{ marginRight: 8 }} />
+        <View style={styles.exploreButtonGradient}>
+          <Ionicons name="compass" size={20} color="#000000" style={{ marginRight: 8 }} />
           <Text style={styles.exploreButtonText}>Explore Games</Text>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -173,7 +158,7 @@ export default function FavoritesScreen() {
       entering={FadeIn}
       style={styles.errorContainer}
     >
-      <Ionicons name="alert-circle" size={60} color="#FF0050" />
+      <Ionicons name="alert-circle" size={60} color="#FF6B6B" />
       <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
       <Text style={styles.errorText}>{error}</Text>
       <TouchableOpacity
@@ -181,15 +166,10 @@ export default function FavoritesScreen() {
         style={styles.retryButton}
         activeOpacity={0.8}
       >
-        <LinearGradient
-          colors={['#FF0050', '#FF4500']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.retryButtonGradient}
-        >
-          <Ionicons name="refresh" size={20} color="#fff" style={{ marginRight: 8 }} />
+        <View style={styles.retryButtonGradient}>
+          <Ionicons name="refresh" size={20} color="#000000" style={{ marginRight: 8 }} />
           <Text style={styles.retryButtonText}>Try Again</Text>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -241,8 +221,9 @@ export default function FavoritesScreen() {
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={handleRefresh}
-                  tintColor="#FF0050"
-                  colors={['#FF0050', '#FF4500']}
+                  tintColor="#FF6B6B"
+                  colors={['#FF6B6B']}
+                  progressBackgroundColor="#FFFEF0"
                 />
               }
             />
@@ -256,7 +237,7 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000'
+    backgroundColor: '#FFFEF0'
   },
   header: {
     paddingHorizontal: 20,
@@ -270,22 +251,29 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginRight: 12
   },
   countBadge: {
-    backgroundColor: '#FF0050',
+    backgroundColor: '#FF6B6B',
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 0,
     minWidth: 32,
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3
   },
   countText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff'
+    fontWeight: '900',
+    color: '#000000'
   },
   sortList: {
     maxHeight: 45
@@ -296,27 +284,35 @@ const styles = StyleSheet.create({
   sortChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 16,
-    marginRight: 8
+    borderRadius: 0,
+    marginRight: 8,
+    backgroundColor: '#FF6B6B',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3
   },
   sortChipInactive: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#333',
+    borderRadius: 0,
+    backgroundColor: '#FFFEF0',
+    borderWidth: 3,
+    borderColor: '#000000',
     marginRight: 8
   },
   sortChipTextSelected: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#fff'
+    fontWeight: '900',
+    color: '#000000'
   },
   sortChipText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#888'
+    fontWeight: '700',
+    color: '#000000'
   },
   gamesContainer: {
     paddingHorizontal: 10,
@@ -340,39 +336,56 @@ const styles = StyleSheet.create({
   emptyIconContainer: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24
+    marginBottom: 24,
+    backgroundColor: '#FF6B6B',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginBottom: 10
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: '#000000',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 30
+    marginBottom: 30,
+    fontWeight: '700'
   },
   exploreButton: {
-    borderRadius: 12,
-    overflow: 'hidden'
+    borderRadius: 0,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4
   },
   exploreButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
     paddingHorizontal: 30,
-    borderRadius: 12
+    borderRadius: 0,
+    backgroundColor: '#4ECDC4'
   },
   exploreButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#fff'
+    fontWeight: '900',
+    color: '#000000'
   },
   errorContainer: {
     flex: 1,
@@ -383,32 +396,41 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginTop: 20,
     marginBottom: 10
   },
   errorText: {
     fontSize: 16,
-    color: '#888',
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 30,
-    lineHeight: 22
+    lineHeight: 22,
+    fontWeight: '700'
   },
   retryButton: {
-    borderRadius: 12,
-    overflow: 'hidden'
+    borderRadius: 0,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4
   },
   retryButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
     paddingHorizontal: 30,
-    borderRadius: 12
+    borderRadius: 0,
+    backgroundColor: '#FF6B6B'
   },
   retryButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#fff'
+    fontWeight: '900',
+    color: '#000000'
   }
 });

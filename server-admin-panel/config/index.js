@@ -178,7 +178,7 @@ const config = {
     user: process.env.SMTP_USER || '',
     password: process.env.SMTP_PASSWORD || '',
     fromEmail: process.env.SMTP_FROM_EMAIL || 'noreply@example.com',
-    fromName: process.env.SMTP_FROM_NAME || 'TikTok Games',
+    fromName: process.env.SMTP_FROM_NAME || 'Kisku',
   },
 
   // Logging
@@ -203,7 +203,7 @@ const config = {
 
   // App Settings
   app: {
-    name: process.env.APP_NAME || 'TikTok Games',
+    name: process.env.APP_NAME || 'Kisku',
     version: process.env.APP_VERSION || '4.0.0',
     description: process.env.APP_DESCRIPTION || 'Play amazing HTML5 games',
     supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com',

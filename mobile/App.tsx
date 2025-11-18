@@ -1,7 +1,6 @@
 /**
- * WORLD'S BEST Mobile App Entry Point
- * Ultra-Smooth 120FPS Performance
- * AAA+ Premium Quality Implementation
+ * Kisku - Neo-Brutalism Game Platform
+ * Bold, Raw, Unapologetic Design
  */
 
 import React, { useEffect, useCallback, useMemo } from 'react';
@@ -15,7 +14,7 @@ import Toast from 'react-native-toast-message';
 import { View, StyleSheet, Platform, UIManager, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Enable LayoutAnimation on Android for 120fps smooth animations
+// Enable LayoutAnimation on Android for smooth animations
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -26,18 +25,18 @@ LogBox.ignoreLogs([
   'VirtualizedLists should never be nested',
 ]);
 
-// Custom ultra-smooth dark theme
-const UltraSmoothTheme = {
+// Neo-Brutalism Theme - Bold, Raw, High Contrast
+const NeoBrutalismTheme = {
   ...DefaultTheme,
-  dark: true,
+  dark: false,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#FF0050',
-    background: '#000000',
-    card: '#000000',
-    text: '#FFFFFF',
-    border: '#1a1a1a',
-    notification: '#FF0050',
+    primary: '#FF6B6B',
+    background: '#FFFEF0',
+    card: '#FFFFFF',
+    text: '#000000',
+    border: '#000000',
+    notification: '#FF6B6B',
   },
 };
 
@@ -65,7 +64,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 /**
  * Home Tabs Navigator
- * Ultra-smooth bottom navigation with 120fps animations
+ * Neo-Brutalism style with bold borders and high contrast
  */
 function HomeTabs() {
   // Memoize icon renderer for performance
@@ -79,33 +78,33 @@ function HomeTabs() {
     return <Ionicons name={iconMap[route.name] || 'ellipse'} size={size} color={color} />;
   }, []);
 
-  // Memoize screen options for 120fps performance
+  // Neo-Brutalism screen options
   const screenOptions = useMemo(() => ({
     tabBarIcon: ({ focused, color, size }: any) => getTabBarIcon,
-    tabBarActiveTintColor: '#FF0050',
-    tabBarInactiveTintColor: '#666',
+    tabBarActiveTintColor: '#000000',
+    tabBarInactiveTintColor: '#666666',
     tabBarHideOnKeyboard: true,
-    lazy: true, // Lazy load tabs for faster initial render
+    lazy: true,
     tabBarStyle: {
-      backgroundColor: '#000',
-      borderTopColor: '#1a1a1a',
-      borderTopWidth: 1,
+      backgroundColor: '#FFFEF0',
+      borderTopColor: '#000000',
+      borderTopWidth: 3,
       paddingBottom: Platform.OS === 'ios' ? 20 : 5,
       paddingTop: 5,
       height: Platform.OS === 'ios' ? 80 : 60,
-      elevation: 0, // Remove shadow on Android for smoother performance
+      elevation: 0,
     },
     headerStyle: {
-      backgroundColor: '#000',
+      backgroundColor: '#FFFEF0',
       elevation: 0,
       shadowOpacity: 0,
-      borderBottomWidth: 1,
-      borderBottomColor: '#1a1a1a',
+      borderBottomWidth: 3,
+      borderBottomColor: '#000000',
     },
-    headerTintColor: '#fff',
+    headerTintColor: '#000000',
     tabBarLabelStyle: {
       fontSize: 12,
-      fontWeight: '600' as const,
+      fontWeight: '800' as const,
     },
   }), [getTabBarIcon]);
 
@@ -151,7 +150,7 @@ function HomeTabs() {
 
 /**
  * Loading Screen Component
- * Shows while auth state is being determined
+ * Neo-Brutalism style loading
  */
 function LoadingScreen() {
   return (
@@ -163,23 +162,22 @@ function LoadingScreen() {
 
 /**
  * Main App Component
- * Premium entry point with error boundary and toast notifications
+ * Kisku - Neo-Brutalism Game Platform
  */
 export default function App() {
-  const { user, isLoading } = useAuthStore();
+  const { isLoading } = useAuthStore();
 
   useEffect(() => {
-    // Any app-level initialization can go here
-    console.log('TikTok Games App Initialized');
+    console.log('Kisku App Initialized');
   }, []);
 
-  // Show loading screen while determining auth state
+  // Show loading screen while initializing
   if (isLoading) {
     return (
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.container}>
           <LoadingScreen />
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
         </GestureHandlerRootView>
       </SafeAreaProvider>
     );
@@ -189,79 +187,70 @@ export default function App() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.container}>
-          <NavigationContainer theme={UltraSmoothTheme}>
+          <NavigationContainer theme={NeoBrutalismTheme}>
             <Stack.Navigator
               screenOptions={{
                 headerStyle: {
-                  backgroundColor: '#000',
+                  backgroundColor: '#FFFEF0',
                   elevation: 0,
                   shadowOpacity: 0,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#1a1a1a',
+                  borderBottomWidth: 3,
+                  borderBottomColor: '#000000',
                 },
-                headerTintColor: '#fff',
-                cardStyle: { backgroundColor: '#000' },
+                headerTintColor: '#000000',
+                cardStyle: { backgroundColor: '#FFFEF0' },
                 headerTitleStyle: {
-                  fontWeight: '700',
+                  fontWeight: '800',
                   fontSize: 18,
                 },
-                // Ultra-smooth 120fps transitions
                 ...TransitionPresets.SlideFromRightIOS,
                 gestureEnabled: true,
                 gestureResponseDistance: 100,
-                // Optimize for 120fps
                 detachPreviousScreen: true,
                 freezeOnBlur: true,
               }}
             >
-              {user == null ? (
-                // Auth Stack
-                <>
-                  <Stack.Screen
-                    name="Login"
-                    component={LoginScreen}
-                    options={{
-                      headerShown: false,
-                      animationTypeForReplace: 'push',
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Register"
-                    component={RegisterScreen}
-                    options={{
-                      headerShown: false,
-                      animationTypeForReplace: 'push',
-                    }}
-                  />
-                </>
-              ) : (
-                // Main App Stack
-                <>
-                  <Stack.Screen
-                    name="MainTabs"
-                    component={HomeTabs}
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="GamePlayer"
-                    component={GamePlayerScreen}
-                    options={{
-                      headerShown: false,
-                      presentation: 'fullScreenModal',
-                      gestureEnabled: true,
-                      gestureDirection: 'vertical',
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Notifications"
-                    component={NotificationsScreen}
-                    options={{
-                      headerShown: false,
-                      ...TransitionPresets.SlideFromRightIOS,
-                    }}
-                  />
-                </>
-              )}
+              {/* Main App - No login required for browsing */}
+              <Stack.Screen
+                name="MainTabs"
+                component={HomeTabs}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="GamePlayer"
+                component={GamePlayerScreen}
+                options={{
+                  headerShown: false,
+                  presentation: 'fullScreenModal',
+                  gestureEnabled: true,
+                  gestureDirection: 'vertical',
+                }}
+              />
+              <Stack.Screen
+                name="Notifications"
+                component={NotificationsScreen}
+                options={{
+                  headerShown: false,
+                  ...TransitionPresets.SlideFromRightIOS,
+                }}
+              />
+              {/* Auth screens - accessible when needed (e.g., for commenting) */}
+              <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+                options={{
+                  headerShown: false,
+                  presentation: 'modal',
+                }}
+              />
+              <Stack.Screen
+                name="Register"
+                component={RegisterScreen}
+                options={{
+                  headerShown: false,
+                  presentation: 'modal',
+                }}
+              />
             </Stack.Navigator>
           </NavigationContainer>
 
@@ -269,7 +258,7 @@ export default function App() {
           <Toast />
 
           {/* Status Bar */}
-          <StatusBar style="light" backgroundColor="#000" />
+          <StatusBar style="dark" backgroundColor="#FFFEF0" />
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </ErrorBoundary>
@@ -279,11 +268,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FFFEF0',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FFFEF0',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,

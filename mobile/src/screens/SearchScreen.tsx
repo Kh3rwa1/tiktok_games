@@ -130,14 +130,9 @@ export default function SearchScreen() {
         activeOpacity={0.7}
       >
         {isSelected ? (
-          <LinearGradient
-            colors={['#FF0050', '#FF4500']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.categoryChip}
-          >
+          <View style={styles.categoryChip}>
             <Text style={styles.categoryChipTextSelected}>{item.label}</Text>
-          </LinearGradient>
+          </View>
         ) : (
           <View style={styles.categoryChipInactive}>
             <Text style={styles.categoryChipText}>{item.label}</Text>
@@ -171,7 +166,7 @@ export default function SearchScreen() {
           entering={FadeIn.delay(200)}
           style={styles.emptyState}
         >
-          <Ionicons name="search" size={80} color="#444" />
+          <Ionicons name="search" size={80} color="#000000" />
           <Text style={styles.emptyTitle}>Discover Amazing Games</Text>
           <Text style={styles.emptyText}>
             Search for games or browse by category
@@ -186,7 +181,7 @@ export default function SearchScreen() {
           entering={FadeIn.delay(200)}
           style={styles.emptyState}
         >
-          <Ionicons name="game-controller-outline" size={80} color="#444" />
+          <Ionicons name="game-controller-outline" size={80} color="#000000" />
           <Text style={styles.emptyTitle}>No Games Found</Text>
           <Text style={styles.emptyText}>
             Try a different search term or category
@@ -203,7 +198,7 @@ export default function SearchScreen() {
       entering={FadeIn}
       style={styles.errorContainer}
     >
-      <Ionicons name="alert-circle" size={60} color="#FF0050" />
+      <Ionicons name="alert-circle" size={60} color="#FF6B6B" />
       <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
       <Text style={styles.errorText}>{error}</Text>
       <TouchableOpacity
@@ -211,15 +206,10 @@ export default function SearchScreen() {
         style={styles.retryButton}
         activeOpacity={0.8}
       >
-        <LinearGradient
-          colors={['#FF0050', '#FF4500']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.retryButtonGradient}
-        >
-          <Ionicons name="refresh" size={20} color="#fff" style={{ marginRight: 8 }} />
+        <View style={styles.retryButtonGradient}>
+          <Ionicons name="refresh" size={20} color="#000000" style={{ marginRight: 8 }} />
           <Text style={styles.retryButtonText}>Try Again</Text>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -235,7 +225,7 @@ export default function SearchScreen() {
 
         {/* Search Input */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+          <Ionicons name="search" size={20} color="#000000" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search for games..."
@@ -249,7 +239,7 @@ export default function SearchScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={handleClearSearch} style={styles.clearButton}>
-              <Ionicons name="close-circle" size={20} color="#888" />
+              <Ionicons name="close-circle" size={20} color="#000000" />
             </TouchableOpacity>
           )}
         </View>
@@ -296,7 +286,7 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000'
+    backgroundColor: '#FFFEF0'
   },
   header: {
     paddingHorizontal: 20,
@@ -305,19 +295,24 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginBottom: 15
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    backgroundColor: '#FFFEF0',
+    borderRadius: 0,
     paddingHorizontal: 15,
     height: 50,
-    borderWidth: 1,
-    borderColor: '#333'
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4
   },
   searchIcon: {
     marginRight: 10
@@ -325,8 +320,9 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#fff',
-    paddingVertical: 0
+    color: '#000000',
+    paddingVertical: 0,
+    fontWeight: '700'
   },
   clearButton: {
     padding: 5
@@ -342,27 +338,35 @@ const styles = StyleSheet.create({
   categoryChip: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10
+    borderRadius: 0,
+    marginRight: 10,
+    backgroundColor: '#FF6B6B',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3
   },
   categoryChipInactive: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#333',
+    borderRadius: 0,
+    backgroundColor: '#FFFEF0',
+    borderWidth: 3,
+    borderColor: '#000000',
     marginRight: 10
   },
   categoryChipTextSelected: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#fff'
+    fontWeight: '900',
+    color: '#000000'
   },
   categoryChipText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#888'
+    fontWeight: '700',
+    color: '#000000'
   },
   gamesContainer: {
     paddingHorizontal: 10,
@@ -385,16 +389,17 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginTop: 20,
     marginBottom: 10
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: '#000000',
     textAlign: 'center',
-    lineHeight: 22
+    lineHeight: 22,
+    fontWeight: '700'
   },
   errorContainer: {
     flex: 1,
@@ -405,32 +410,41 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginTop: 20,
     marginBottom: 10
   },
   errorText: {
     fontSize: 16,
-    color: '#888',
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 30,
-    lineHeight: 22
+    lineHeight: 22,
+    fontWeight: '700'
   },
   retryButton: {
-    borderRadius: 12,
-    overflow: 'hidden'
+    borderRadius: 0,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#000000',
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4
   },
   retryButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
     paddingHorizontal: 30,
-    borderRadius: 12
+    borderRadius: 0,
+    backgroundColor: '#FF6B6B'
   },
   retryButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#fff'
+    fontWeight: '900',
+    color: '#000000'
   }
 });
