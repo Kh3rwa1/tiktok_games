@@ -41,8 +41,8 @@ const verifyToken = (token) => {
  * Check if account is locked
  */
 const isAccountLocked = (user) => {
-  if (!user.lockedUntil) return false;
-  return new Date(user.lockedUntil) > new Date();
+  if (!user.locked_until) return false;
+  return new Date(user.locked_until) > new Date();
 };
 
 /**
@@ -85,7 +85,7 @@ const protect = async (req, res, next) => {
     }
 
     // Check if account is active
-    if (!user.isActive) {
+    if (!user.is_active) {
       return res.status(401).json({
         error: 'Account is deactivated',
         code: 'ACCOUNT_INACTIVE'
@@ -94,7 +94,7 @@ const protect = async (req, res, next) => {
 
     // Check if account is locked
     if (isAccountLocked(user)) {
-      const lockedUntil = new Date(user.lockedUntil);
+      const lockedUntil = new Date(user.locked_until);
       return res.status(423).json({
         error: 'Account is temporarily locked',
         lockedUntil: lockedUntil.toISOString(),
@@ -103,8 +103,8 @@ const protect = async (req, res, next) => {
     }
 
     // Check if password was changed after token was issued
-    if (user.passwordChangedAt) {
-      const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000);
+    if (user.password_changed_at) {
+      const passwordChangedTime = Math.floor(new Date(user.password_changed_at).getTime() / 1000);
       if (decoded.iat < passwordChangedTime) {
         return res.status(401).json({
           error: 'Password was changed. Please log in again.',
@@ -173,7 +173,7 @@ const optionalAuth = async (req, res, next) => {
 
       if (decoded) {
         const user = await User.findById(decoded.id);
-        if (user && user.isActive && !isAccountLocked(user)) {
+        if (user && user.is_active && !isAccountLocked(user)) {
           req.user = user;
         }
       }
@@ -271,7 +271,7 @@ const refreshAuth = async (req, res, next) => {
 
     const user = await User.findById(decoded.id);
 
-    if (!user || !user.isActive) {
+    if (!user || !user.is_active) {
       return res.status(401).json({
         error: 'User not found or inactive',
         code: 'USER_INVALID'
