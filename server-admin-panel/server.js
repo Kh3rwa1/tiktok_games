@@ -194,6 +194,28 @@ app.use(express.static(path.join(__dirname, 'public'), {
   lastModified: true,
 }));
 
+// Serve game files with aggressive caching for better performance
+app.use('/games', express.static(path.join(__dirname, 'public', 'games'), {
+  maxAge: '7d', // Cache games for 7 days
+  etag: true,
+  lastModified: true,
+  immutable: true, // Games are versioned by ID, so they're immutable
+  setHeaders: (res, filePath) => {
+    // Set cache control headers for game assets
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour for HTML
+    } else if (filePath.match(/\.(js|css)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable'); // 7 days for JS/CSS
+    } else if (filePath.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 days for images
+    } else if (filePath.match(/\.(woff|woff2|ttf|otf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 days for fonts
+    } else if (filePath.match(/\.(mp3|wav|ogg|m4a)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 days for audio
+    }
+  }
+}));
+
 // Health check endpoint
 app.get('/health', async (req, res) => {
   let dbStatus = 'healthy';
