@@ -67,8 +67,14 @@ class GameModel {
     } = options;
 
     const offset = (page - 1) * limit;
-    const conditions = ['g.is_active = ?'];
-    const values = [isActive];
+    const conditions = [];
+    const values = [];
+
+    // Only filter by isActive if explicitly set
+    if (isActive !== undefined) {
+      conditions.push('g.is_active = ?');
+      values.push(isActive);
+    }
 
     if (category) {
       conditions.push('g.category = ?');
@@ -93,12 +99,15 @@ class GameModel {
     const sortField = this.getSortField(sortBy);
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
+    // Build WHERE clause
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
     // Get games
     const [games] = await pool.execute(
       `SELECT g.*, u.username as creator_username, u.avatar as creator_avatar
        FROM games g
        LEFT JOIN users u ON g.creator_id = u.id
-       WHERE ${conditions.join(' AND ')}
+       ${whereClause}
        ORDER BY ${sortField} ${sortOrder}
        LIMIT ? OFFSET ?`,
       [...values, limit, offset]
@@ -106,7 +115,7 @@ class GameModel {
 
     // Get total count
     const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as total FROM games g WHERE ${conditions.join(' AND ')}`,
+      `SELECT COUNT(*) as total FROM games g ${whereClause}`,
       values
     );
 
@@ -130,13 +139,15 @@ class GameModel {
   async update(id, updates) {
     const allowedFields = [
       'title', 'description', 'thumbnail', 'game_url', 'category',
-      'tags', 'difficulty', 'controls', 'requirements', 'is_active', 'is_featured'
+      'tags', 'difficulty', 'controls', 'requirements', 'is_active', 'is_featured',
+      'file_size', 'version'
     ];
 
     const fieldMapping = {
       gameUrl: 'game_url',
       isActive: 'is_active',
-      isFeatured: 'is_featured'
+      isFeatured: 'is_featured',
+      fileSize: 'file_size'
     };
 
     const updateFields = [];
