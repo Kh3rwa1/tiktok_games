@@ -22,6 +22,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withSequence,
   FadeIn,
   FadeOut,
   SlideInUp,
@@ -90,17 +91,24 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
       }
     }
 
-    setPlayStartTime(Date.now());
+    const startTime = Date.now();
+    setPlayStartTime(startTime);
 
     return () => {
+      // Clean up timeout
+      if (hideControlsTimeout.current) {
+        clearTimeout(hideControlsTimeout.current);
+        hideControlsTimeout.current = null;
+      }
+
       // Record play time when leaving
-      const duration = Math.floor((Date.now() - playStartTime) / 1000);
+      const duration = Math.floor((Date.now() - startTime) / 1000);
       if (duration > 5 && user) {
         // Only record if played for more than 5 seconds
         recordPlay(game.id, duration);
       }
     };
-  }, []);
+  }, [game.id, user]);
 
   useEffect(() => {
     if (showControls) {

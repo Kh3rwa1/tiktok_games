@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 32;
 
-export type SkeletonVariant = 'card' | 'list' | 'profile' | 'grid';
+export type SkeletonVariant = 'card' | 'list' | 'profile' | 'grid' | 'game';
 
 export interface LoadingSkeletonProps {
   variant?: SkeletonVariant;
@@ -71,6 +71,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
     const items = Array.from({ length: count }, (_, index) => (
       <View key={index} style={[styles.skeletonContainer, style]}>
         {variant === 'card' && <CardSkeleton shimmerStyle={shimmerStyle} />}
+        {variant === 'game' && <GameSkeleton shimmerStyle={shimmerStyle} />}
         {variant === 'list' && <ListSkeleton shimmerStyle={shimmerStyle} />}
         {variant === 'profile' && <ProfileSkeleton shimmerStyle={shimmerStyle} />}
         {variant === 'grid' && <GridSkeleton shimmerStyle={shimmerStyle} />}
@@ -110,6 +111,42 @@ const CardSkeleton: React.FC<{ shimmerStyle: any }> = ({ shimmerStyle }) => {
           <View style={styles.cardStatItem} />
           <View style={styles.cardStatItem} />
           <View style={styles.cardStatItem} />
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// Game Skeleton Component (Full screen game card)
+const GameSkeleton: React.FC<{ shimmerStyle: any }> = ({ shimmerStyle }) => {
+  const { height: screenHeight } = Dimensions.get('window');
+  const gameHeight = screenHeight - 130; // Account for tab bar and padding
+
+  return (
+    <View style={[styles.gameSkeleton, { height: gameHeight }]}>
+      <View style={styles.gameImageSkeleton}>
+        <Animated.View style={[styles.shimmer, shimmerStyle]}>
+          <LinearGradient
+            colors={[
+              'rgba(255,255,255,0)',
+              'rgba(255,255,255,0.05)',
+              'rgba(255,255,255,0.1)',
+              'rgba(255,255,255,0.05)',
+              'rgba(255,255,255,0)',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.shimmerGradient}
+          />
+        </Animated.View>
+      </View>
+      <View style={styles.gameOverlayContent}>
+        <View style={styles.gameTitleSkeleton} />
+        <View style={styles.gameDescSkeleton} />
+        <View style={styles.gameStatsRow}>
+          <View style={styles.gameStatItem} />
+          <View style={styles.gameStatItem} />
+          <View style={styles.gameStatItem} />
         </View>
       </View>
     </View>
@@ -424,6 +461,66 @@ const styles = StyleSheet.create({
     height: 14,
     width: '80%',
     backgroundColor: '#252525',
+    borderRadius: 4,
+  },
+
+  // Game Skeleton Styles (Full screen)
+  gameSkeleton: {
+    width: CARD_WIDTH,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginHorizontal: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  gameImageSkeleton: {
+    width: '100%',
+    height: '70%',
+    backgroundColor: '#252525',
+    overflow: 'hidden',
+  },
+  gameOverlayContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 24,
+    backgroundColor: 'rgba(26, 26, 26, 0.95)',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  gameTitleSkeleton: {
+    height: 24,
+    width: '80%',
+    backgroundColor: '#353535',
+    borderRadius: 6,
+    marginBottom: 12,
+  },
+  gameDescSkeleton: {
+    height: 16,
+    width: '60%',
+    backgroundColor: '#353535',
+    borderRadius: 4,
+    marginBottom: 16,
+  },
+  gameStatsRow: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  gameStatItem: {
+    height: 16,
+    width: 60,
+    backgroundColor: '#353535',
     borderRadius: 4,
   },
 });
