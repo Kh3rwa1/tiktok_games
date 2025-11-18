@@ -142,31 +142,34 @@ const initDatabase = async () => {
       )
     `);
 
-    // Create app_settings table
+    // Create app_settings table for admin configuration
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS app_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
         setting_key VARCHAR(100) UNIQUE NOT NULL,
         setting_value TEXT,
         setting_type ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
-        description VARCHAR(255),
+        description VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_key (setting_key)
       )
     `);
 
-    // Create notifications table
+    // Create notifications table for in-app notifications
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
+        title VARCHAR(200) NOT NULL,
         message TEXT NOT NULL,
-        type ENUM('info', 'success', 'warning', 'error', 'promo') DEFAULT 'info',
+        type ENUM('info', 'warning', 'success', 'error', 'promotion') DEFAULT 'info',
         target_audience ENUM('all', 'users', 'admins') DEFAULT 'all',
         is_active BOOLEAN DEFAULT TRUE,
-        start_date TIMESTAMP NULL,
+        priority INT DEFAULT 0,
+        start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         end_date TIMESTAMP NULL,
+        action_url VARCHAR(500),
+        image_url VARCHAR(500),
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -204,6 +207,18 @@ const initDatabase = async () => {
       ('max_upload_size', '50', 'number', 'Maximum upload size in MB'),
       ('allowed_game_formats', '["zip"]', 'json', 'Allowed game upload formats'),
       ('contact_email', '', 'string', 'Contact email address'),
+      ('app_name', 'TikTok Games', 'string', 'Application display name'),
+      ('app_description', 'Play amazing HTML5 games', 'string', 'Application description'),
+      ('app_version', '1.0.0', 'string', 'Current app version'),
+      ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode'),
+      ('onesignal_app_id', '', 'string', 'OneSignal App ID for push notifications'),
+      ('onesignal_api_key', '', 'string', 'OneSignal REST API Key'),
+      ('onesignal_enabled', 'false', 'boolean', 'Enable OneSignal push notifications'),
+      ('max_upload_size', '100', 'number', 'Maximum game upload size in MB'),
+      ('allowed_game_types', '["html", "zip"]', 'json', 'Allowed game file types'),
+      ('featured_games_count', '10', 'number', 'Number of featured games to display'),
+      ('analytics_enabled', 'true', 'boolean', 'Enable analytics tracking'),
+      ('support_email', 'support@example.com', 'string', 'Support contact email'),
       ('privacy_policy_url', '', 'string', 'Privacy policy URL'),
       ('terms_url', '', 'string', 'Terms of service URL')
     `);

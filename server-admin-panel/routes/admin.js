@@ -3,6 +3,8 @@ const router = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
 const { pool } = require('../config/database');
 const Game = require('../models/mysql/Game');
+const Setting = require('../models/mysql/Setting');
+const Notification = require('../models/mysql/Notification');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
@@ -211,7 +213,7 @@ router.get('/users', protect, adminOnly, async (req, res) => {
     const { page = 1, limit = 20, search = '' } = req.query;
     const offset = (page - 1) * limit;
 
-    let query = `SELECT id, username, email, avatar, role, is_active, created_at FROM users`;
+    let query = `SELECT id, username, email, avatar, role, is_active, total_games_played, created_at FROM users`;
     let countQuery = `SELECT COUNT(*) as total FROM users`;
     const values = [];
 
