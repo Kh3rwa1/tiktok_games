@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
-const { pool } = require('../config/database');
+const { pool, logAudit } = require('../config/database');
+const { config, formatFileSize } = require('../config');
 const Game = require('../models/mysql/Game');
 const Setting = require('../models/mysql/Setting');
 const Notification = require('../models/mysql/Notification');
@@ -30,14 +31,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB max
+  limits: { fileSize: config.uploads.maxFileSize },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.zip', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
     const ext = path.extname(file.originalname).toLowerCase();
+    const allowedTypes = [...config.uploads.allowedGameTypes, ...config.uploads.allowedImageTypes];
     if (allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type'));
+      cb(new Error(`Invalid file type. Allowed: ${allowedTypes.join(', ')}`));
     }
   }
 });
@@ -998,6 +999,9 @@ router.post('/setup', async (req, res) => {
     // Make admin
     await pool.execute(`UPDATE users SET role = 'admin' WHERE id = ?`, [user.id]);
 
+    // Log the setup
+    await logAudit(user.id, 'ADMIN_SETUP', 'user', user.id, { username, email }, req);
+
     res.status(201).json({
       success: true,
       message: 'Admin user created',
@@ -1006,6 +1010,205 @@ router.post('/setup', async (req, res) => {
   } catch (error) {
     console.error('Error creating admin:', error);
     res.status(500).json({ message: 'Error creating admin user' });
+  }
+});
+
+// ==========================================
+// SYSTEM INFORMATION
+// ==========================================
+
+// Get system configuration
+router.get('/system-info', protect, adminOnly, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        app: config.app,
+        environment: config.env,
+        uploads: {
+          maxFileSize: config.uploads.maxFileSize,
+          maxFileSizeFormatted: formatFileSize(config.uploads.maxFileSize),
+          maxGameZipSize: config.uploads.maxGameZipSize,
+          maxGameZipSizeFormatted: formatFileSize(config.uploads.maxGameZipSize),
+          maxThumbnailSize: config.uploads.maxThumbnailSize,
+          maxThumbnailSizeFormatted: formatFileSize(config.uploads.maxThumbnailSize),
+          allowedGameTypes: config.uploads.allowedGameTypes,
+          allowedImageTypes: config.uploads.allowedImageTypes
+        },
+        features: config.features,
+        onesignal: {
+          enabled: config.onesignal.enabled,
+          configured: !!(config.onesignal.appId && config.onesignal.apiKey)
+        },
+        maintenance: config.maintenance
+      }
+    });
+  } catch (error) {
+    console.error('Error getting system info:', error);
+    res.status(500).json({ message: 'Error getting system information' });
+  }
+});
+
+// ==========================================
+// AUDIT LOG
+// ==========================================
+
+// Get audit log
+router.get('/audit-log', protect, adminOnly, async (req, res) => {
+  try {
+    const { page = 1, limit = 50, action = '', userId = '' } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT al.*, u.username, u.email
+      FROM audit_log al
+      LEFT JOIN users u ON al.user_id = u.id
+      WHERE 1=1
+    `;
+    let countQuery = `SELECT COUNT(*) as total FROM audit_log WHERE 1=1`;
+    const values = [];
+
+    if (action) {
+      query += ` AND al.action LIKE ?`;
+      countQuery += ` AND action LIKE ?`;
+      values.push(`%${action}%`);
+    }
+
+    if (userId) {
+      query += ` AND al.user_id = ?`;
+      countQuery += ` AND user_id = ?`;
+      values.push(userId);
+    }
+
+    query += ` ORDER BY al.created_at DESC LIMIT ? OFFSET ?`;
+
+    const [logs] = await pool.execute(query, [...values, parseInt(limit), offset]);
+    const [countResult] = await pool.execute(countQuery, values);
+
+    res.json({
+      success: true,
+      data: logs.map(log => ({
+        ...log,
+        details: log.details ? JSON.parse(log.details) : null
+      })),
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: countResult[0].total,
+        pages: Math.ceil(countResult[0].total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching audit log:', error);
+    res.status(500).json({ message: 'Error fetching audit log' });
+  }
+});
+
+// ==========================================
+// ONESIGNAL TEST
+// ==========================================
+
+// Test OneSignal connection
+router.post('/test-onesignal', protect, adminOnly, async (req, res) => {
+  try {
+    // Get OneSignal credentials from settings or request
+    let appId = req.body.appId;
+    let apiKey = req.body.apiKey;
+
+    if (!appId || !apiKey) {
+      const [settings] = await pool.execute(
+        'SELECT setting_key, setting_value FROM app_settings WHERE setting_key IN (?, ?)',
+        ['onesignal_app_id', 'onesignal_api_key']
+      );
+
+      const settingsMap = {};
+      settings.forEach(s => settingsMap[s.setting_key] = s.setting_value);
+
+      appId = appId || settingsMap.onesignal_app_id;
+      apiKey = apiKey || settingsMap.onesignal_api_key;
+    }
+
+    if (!appId || !apiKey) {
+      return res.status(400).json({
+        success: false,
+        message: 'OneSignal App ID and API Key are required'
+      });
+    }
+
+    // Test the connection by fetching app info
+    const fetch = require('node-fetch');
+    const response = await fetch(`https://onesignal.com/api/v1/apps/${appId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${apiKey}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.id) {
+      res.json({
+        success: true,
+        message: 'OneSignal connection successful',
+        data: {
+          appName: data.name,
+          players: data.players,
+          messageable_players: data.messageable_players
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'OneSignal connection failed',
+        error: data.errors || 'Invalid credentials'
+      });
+    }
+  } catch (error) {
+    console.error('Error testing OneSignal:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error testing OneSignal connection',
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// DATABASE BACKUP (Basic)
+// ==========================================
+
+// Get database table info
+router.get('/database-info', protect, adminOnly, async (req, res) => {
+  try {
+    const [tables] = await pool.execute(`
+      SELECT
+        TABLE_NAME as name,
+        TABLE_ROWS as rows,
+        DATA_LENGTH as dataSize,
+        INDEX_LENGTH as indexSize
+      FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = ?
+    `, [config.database.name]);
+
+    const tableInfo = tables.map(t => ({
+      name: t.name,
+      rows: t.rows,
+      size: formatFileSize((t.dataSize || 0) + (t.indexSize || 0))
+    }));
+
+    const totalSize = tables.reduce((sum, t) => sum + (t.dataSize || 0) + (t.indexSize || 0), 0);
+
+    res.json({
+      success: true,
+      data: {
+        tables: tableInfo,
+        totalSize: formatFileSize(totalSize),
+        tableCount: tables.length
+      }
+    });
+  } catch (error) {
+    console.error('Error getting database info:', error);
+    res.status(500).json({ message: 'Error getting database information' });
   }
 });
 

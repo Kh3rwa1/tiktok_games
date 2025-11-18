@@ -1,13 +1,14 @@
 {
   "name": "tiktok-games-server",
-  "version": "4.0.0",
-  "description": "TikTok Games Server + Admin Panel - Simple cPanel deployment with MySQL",
+  "version": "5.0.0",
+  "description": "TikTok Games Server + Admin Panel - Production-ready with enhanced security and configuration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "validate": "node -e \"require('./config').validateConfig()\""
   },
-  "keywords": ["games", "api", "mysql", "cpanel"],
+  "keywords": ["games", "api", "mysql", "cpanel", "admin-panel", "onesignal"],
   "author": "",
   "license": "MIT",
   "engines": {
