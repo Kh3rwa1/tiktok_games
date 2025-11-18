@@ -4,10 +4,10 @@
   "description": "World's Best & Smoothest TikTok Games Mobile App - 120FPS Ultra Performance",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "npx expo start",
+    "android": "npx expo start --android",
+    "ios": "npx expo start --ios",
+    "web": "npx expo start --web",
     "build:android": "eas build --platform android",
     "build:ios": "eas build --platform ios",
     "build:all": "eas build --platform all"
