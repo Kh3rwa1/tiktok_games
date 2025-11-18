@@ -145,6 +145,43 @@
       font-weight: 400;
     }
 
+    /* File Upload Area */
+    .file-upload-area {
+      border: 3px dashed var(--brutal-black);
+      background: var(--brutal-gray);
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .file-upload-area:hover {
+      background: var(--brutal-yellow);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--brutal-black);
+    }
+
+    .file-upload-area i {
+      font-size: 32px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .file-upload-area p {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .file-upload-area.has-file {
+      border-color: var(--success);
+      background: rgba(0, 255, 102, 0.2);
+    }
+
+    .file-upload-area.has-file i {
+      color: var(--success);
+    }
+
     /* Buttons - Neo Brutalist Style */
     .btn {
       padding: 14px 28px;
@@ -1344,6 +1381,9 @@
                   </td>
                   <td>
                     <div class="action-btns">
+                      <button class="action-btn toggle" onclick="toggleGameActive(${g.id})" title="${g.is_active ? 'Deactivate' : 'Activate'}">
+                        <i class="fas fa-power-off"></i>
+                      </button>
                       <button class="action-btn toggle" onclick="toggleGameFeatured(${g.id})" title="${g.is_featured ? 'Unfeature' : 'Feature'}">
                         <i class="fas fa-star"></i>
                       </button>
@@ -1760,7 +1800,17 @@
     const toggleGameFeatured = async (id) => {
       try {
         await api(`/admin/games/${id}/toggle-featured`, { method: 'PUT' });
-        showToast('Game updated', 'success');
+        showToast('Featured status updated', 'success');
+        loadGames();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const toggleGameActive = async (id) => {
+      try {
+        await api(`/admin/games/${id}/toggle-active`, { method: 'PUT' });
+        showToast('Game status updated', 'success');
         loadGames();
       } catch (error) {
         showToast(error.message, 'error');
@@ -1860,14 +1910,14 @@
     // ==================== MODAL FUNCTIONS ====================
     const showGameModal = () => {
       const content = `
-        <form id="gameForm" onsubmit="createGame(event)">
+        <form id="gameForm" onsubmit="createGame(event)" enctype="multipart/form-data">
           <div class="form-group">
-            <label>Game Title</label>
+            <label>Game Title *</label>
             <input type="text" id="gameTitle" required placeholder="Enter game title">
           </div>
           <div class="form-group">
-            <label>Description</label>
-            <textarea id="gameDescription" placeholder="Game description" rows="3"></textarea>
+            <label>Description *</label>
+            <textarea id="gameDescription" required placeholder="Game description" rows="3"></textarea>
           </div>
           <div class="form-group">
             <label>Category</label>
@@ -1876,16 +1926,44 @@
               <option value="puzzle">Puzzle</option>
               <option value="arcade">Arcade</option>
               <option value="sports">Sports</option>
-              <option value="other">Other</option>
+              <option value="racing">Racing</option>
+              <option value="strategy">Strategy</option>
+              <option value="casual" selected>Casual</option>
+              <option value="adventure">Adventure</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Game URL</label>
-            <input type="url" id="gameUrl" required placeholder="https://example.com/game">
+            <label>Difficulty</label>
+            <select id="gameDifficulty">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
           </div>
           <div class="form-group">
-            <label>Thumbnail URL</label>
-            <input type="url" id="gameThumbnail" placeholder="https://example.com/thumb.jpg">
+            <label>Tags (comma separated)</label>
+            <input type="text" id="gameTags" placeholder="fun, multiplayer, classic">
+          </div>
+          <div class="form-group">
+            <label>Controls</label>
+            <textarea id="gameControls" placeholder="Arrow keys to move, Space to jump" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Game File (ZIP) *</label>
+            <div class="file-upload-area" onclick="document.getElementById('gameFile').click()">
+              <i class="fas fa-file-archive"></i>
+              <p id="gameFileName">Click to select ZIP file containing index.html</p>
+            </div>
+            <input type="file" id="gameFile" accept=".zip" style="display:none" onchange="handleFileSelect(this, 'gameFileName')">
+          </div>
+          <div class="form-group">
+            <label>Thumbnail Image</label>
+            <div class="file-upload-area" onclick="document.getElementById('gameThumbnail').click()">
+              <i class="fas fa-image"></i>
+              <p id="thumbnailFileName">Click to select thumbnail image</p>
+            </div>
+            <input type="file" id="gameThumbnail" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'thumbnailFileName'); previewThumbnail(this)">
+            <img id="thumbnailPreview" style="display:none; max-width:200px; margin-top:10px; border-radius:8px;">
           </div>
         </form>
       `;
@@ -1893,30 +1971,79 @@
       const footer = `
         <button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary btn-sm" onclick="document.getElementById('gameForm').requestSubmit()">
-          <i class="fas fa-plus"></i> Create Game
+          <i class="fas fa-upload"></i> Upload Game
         </button>
       `;
 
-      showModal('Add New Game', content, footer);
+      showModal('Upload New Game', content, footer);
+    };
+
+    const handleFileSelect = (input, labelId) => {
+      const file = input.files[0];
+      if (file) {
+        document.getElementById(labelId).textContent = file.name;
+        input.parentElement.previousElementSibling.nextElementSibling.classList.add('has-file');
+      }
+    };
+
+    const previewThumbnail = (input) => {
+      const file = input.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const preview = document.getElementById('thumbnailPreview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
     };
 
     const createGame = async (e) => {
       e.preventDefault();
 
-      const gameData = {
-        title: document.getElementById('gameTitle').value.trim(),
-        description: document.getElementById('gameDescription').value.trim(),
-        category: document.getElementById('gameCategory').value,
-        game_url: document.getElementById('gameUrl').value.trim(),
-        thumbnail: document.getElementById('gameThumbnail').value.trim()
-      };
+      const gameFile = document.getElementById('gameFile').files[0];
+      const thumbnail = document.getElementById('gameThumbnail').files[0];
+
+      if (!gameFile) {
+        showToast('Please select a game ZIP file', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('title', document.getElementById('gameTitle').value.trim());
+      formData.append('description', document.getElementById('gameDescription').value.trim());
+      formData.append('category', document.getElementById('gameCategory').value);
+      formData.append('difficulty', document.getElementById('gameDifficulty').value);
+      formData.append('controls', document.getElementById('gameControls').value.trim());
+
+      // Parse tags as JSON array
+      const tags = document.getElementById('gameTags').value
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t);
+      formData.append('tags', JSON.stringify(tags));
+
+      formData.append('gameFile', gameFile);
+      if (thumbnail) {
+        formData.append('thumbnail', thumbnail);
+      }
 
       try {
-        await api('/admin/games', {
+        const response = await fetch(`${API_URL}/admin/games`, {
           method: 'POST',
-          body: JSON.stringify(gameData)
+          headers: {
+            'Authorization': `Bearer ${state.token}`
+          },
+          body: formData
         });
-        showToast('Game created!', 'success');
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to upload game');
+        }
+
+        showToast('Game uploaded successfully!', 'success');
         closeModal();
         loadGames();
       } catch (error) {

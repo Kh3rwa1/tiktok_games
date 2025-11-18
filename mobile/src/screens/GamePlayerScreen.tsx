@@ -70,9 +70,11 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
   const [currentRating, setCurrentRating] = useState(0);
   const [playStartTime, setPlayStartTime] = useState<number>(Date.now());
   const [showRating, setShowRating] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const webViewRef = useRef<WebView>(null);
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
+  const loadingTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Animation values
   const controlsOpacity = useSharedValue(1);
@@ -95,11 +97,66 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
     const startTime = Date.now();
     setPlayStartTime(startTime);
 
+    // Set loading timeout (15 seconds max)
+    loadingTimeout.current = setTimeout(() => {
+      if (isLoading) {
+        setIsLoading(false);
+        setLoadError(true);
+        Toast.show({
+          type: 'error',
+          text1: 'Loading Timeout',
+          text2: 'Game is taking too long to load. Try refreshing.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    }, 15000);
+
     return () => {
-      // Clean up timeout
+      // Clean up timeouts
       if (hideControlsTimeout.current) {
         clearTimeout(hideControlsTimeout.current);
         hideControlsTimeout.current = null;
+      }
+
+      if (loadingTimeout.current) {
+        clearTimeout(loadingTimeout.current);
+        loadingTimeout.current = null;
+      }
+
+      // Clear WebView cache and stop loading to free memory
+      if (webViewRef.current) {
+        webViewRef.current.stopLoading();
+        // Inject script to clear game state and free memory
+        webViewRef.current.injectJavaScript(`
+          (function() {
+            // Clear game canvases
+            var canvases = document.querySelectorAll('canvas');
+            canvases.forEach(function(canvas) {
+              var ctx = canvas.getContext('2d');
+              if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+            // Clear audio
+            var audios = document.querySelectorAll('audio');
+            audios.forEach(function(audio) {
+              audio.pause();
+              audio.src = '';
+            });
+            // Clear video
+            var videos = document.querySelectorAll('video');
+            videos.forEach(function(video) {
+              video.pause();
+              video.src = '';
+            });
+            // Clear intervals and timeouts
+            var highestId = window.setTimeout(function(){}, 0);
+            for (var i = 0; i < highestId; i++) {
+              window.clearTimeout(i);
+              window.clearInterval(i);
+            }
+            true;
+          })();
+        `);
       }
 
       // Record play time when leaving
@@ -256,14 +313,45 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
       >
         <WebView
           ref={webViewRef}
-          source={{ uri: game.gameUrl }}
+          source={{
+            uri: game.gameUrl,
+            headers: {
+              'Cache-Control': 'max-age=3600', // Cache for 1 hour
+            }
+          }}
           style={styles.webView}
-          onLoadStart={() => setIsLoading(true)}
-          onLoadEnd={() => setIsLoading(false)}
+          onLoadStart={() => {
+            setIsLoading(true);
+            setLoadError(false);
+          }}
+          onLoadEnd={() => {
+            setIsLoading(false);
+            // Clear loading timeout on successful load
+            if (loadingTimeout.current) {
+              clearTimeout(loadingTimeout.current);
+              loadingTimeout.current = null;
+            }
+          }}
+          onLoadProgress={({ nativeEvent }) => {
+            // Update progress for better UX
+            if (nativeEvent.progress > 0.8) {
+              // Almost loaded, clear timeout early
+              if (loadingTimeout.current) {
+                clearTimeout(loadingTimeout.current);
+                loadingTimeout.current = null;
+              }
+            }
+          }}
           javaScriptEnabled
           domStorageEnabled
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
+          // Enable caching
+          cacheEnabled={true}
+          cacheMode="LOAD_DEFAULT"
+          // Improve performance
+          startInLoadingState={true}
+          renderLoading={() => <></>}
           // Fullscreen support for HTML5 games
           allowsFullscreenVideo
           allowsBackForwardNavigationGestures={false}
