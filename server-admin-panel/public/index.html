@@ -1904,9 +1904,9 @@
       if (!email || !password) { showToast('Please fill in all fields', 'error'); return; }
       try {
         const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-        if (data.data.role !== 'admin') { showToast('Admin access required', 'error'); return; }
+        if (data.data.user.role !== 'admin') { showToast('Admin access required', 'error'); return; }
         state.token = data.data.token;
-        state.user = data.data;
+        state.user = data.data.user;
         localStorage.setItem('adminToken', data.data.token);
         startAutoSync();
         showToast('Login successful!', 'success');

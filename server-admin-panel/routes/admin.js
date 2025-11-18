@@ -248,11 +248,30 @@ router.get('/settings', protect, adminOnly, async (req, res) => {
   }
 });
 
+// Whitelist of allowed settings keys
+const ALLOWED_SETTINGS_KEYS = [
+  'app_name', 'app_version', 'support_email', 'maintenance_mode',
+  'onesignal_enabled', 'onesignal_app_id', 'onesignal_api_key',
+  'max_upload_size', 'max_thumbnail_size',
+  'registration_enabled', 'guest_play_enabled', 'ratings_enabled',
+  'analytics_enabled', 'featured_games_count'
+];
+
 // Update app settings
 router.put('/settings', protect, adminOnly, async (req, res) => {
   const connection = await pool.getConnection();
   try {
     const { settings } = req.body;
+
+    // Validate settings keys against whitelist
+    const invalidKeys = Object.keys(settings).filter(key => !ALLOWED_SETTINGS_KEYS.includes(key));
+    if (invalidKeys.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid settings keys: ${invalidKeys.join(', ')}`,
+        code: 'INVALID_SETTINGS_KEYS'
+      });
+    }
 
     await connection.beginTransaction();
 
