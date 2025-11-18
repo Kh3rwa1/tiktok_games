@@ -6,22 +6,35 @@ const { pool } = require('../../config/database');
 
 class Comment {
   /**
-   * Create a new comment
+   * Create a new comment - with transaction for data integrity
    */
   static async create(gameId, userId, content, parentId = null) {
-    const [result] = await pool.execute(
-      `INSERT INTO game_comments (game_id, user_id, content, parent_id)
-       VALUES (?, ?, ?, ?)`,
-      [gameId, userId, content, parentId]
-    );
+    const connection = await pool.getConnection();
 
-    // Update game comments count
-    await pool.execute(
-      `UPDATE games SET comments_count = comments_count + 1 WHERE id = ?`,
-      [gameId]
-    );
+    try {
+      await connection.beginTransaction();
 
-    return result.insertId;
+      const [result] = await connection.execute(
+        `INSERT INTO game_comments (game_id, user_id, content, parent_id)
+         VALUES (?, ?, ?, ?)`,
+        [gameId, userId, content, parentId]
+      );
+
+      // Update game comments count atomically
+      await connection.execute(
+        `UPDATE games SET comments_count = comments_count + 1 WHERE id = ?`,
+        [gameId]
+      );
+
+      await connection.commit();
+      connection.release();
+
+      return result.insertId;
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
   }
 
   /**
@@ -117,75 +130,137 @@ class Comment {
   }
 
   /**
-   * Toggle like on a comment
+   * Toggle like on a comment - with transaction for data integrity
    */
   static async toggleLike(commentId, userId) {
-    // Check if already liked
-    const [[existing]] = await pool.execute(
-      `SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?`,
-      [commentId, userId]
-    );
+    const connection = await pool.getConnection();
 
-    if (existing) {
-      // Unlike
-      await pool.execute(
-        `DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?`,
+    try {
+      await connection.beginTransaction();
+
+      // Check if already liked with lock
+      const [[existing]] = await connection.execute(
+        `SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ? FOR UPDATE`,
         [commentId, userId]
       );
-      await pool.execute(
-        `UPDATE game_comments SET likes = likes - 1 WHERE id = ?`,
-        [commentId]
-      );
-      return { liked: false };
-    } else {
-      // Like
-      await pool.execute(
-        `INSERT INTO comment_likes (comment_id, user_id) VALUES (?, ?)`,
-        [commentId, userId]
-      );
-      await pool.execute(
-        `UPDATE game_comments SET likes = likes + 1 WHERE id = ?`,
-        [commentId]
-      );
-      return { liked: true };
+
+      let liked;
+      let newLikeCount;
+
+      if (existing) {
+        // Unlike
+        await connection.execute(
+          `DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?`,
+          [commentId, userId]
+        );
+        const [[result]] = await connection.execute(
+          `UPDATE game_comments SET likes = GREATEST(0, likes - 1) WHERE id = ?`,
+          [commentId]
+        );
+        // Get updated count
+        const [[comment]] = await connection.execute(
+          `SELECT likes FROM game_comments WHERE id = ?`,
+          [commentId]
+        );
+        newLikeCount = comment ? comment.likes : 0;
+        liked = false;
+      } else {
+        // Like
+        await connection.execute(
+          `INSERT INTO comment_likes (comment_id, user_id) VALUES (?, ?)`,
+          [commentId, userId]
+        );
+        await connection.execute(
+          `UPDATE game_comments SET likes = likes + 1 WHERE id = ?`,
+          [commentId]
+        );
+        // Get updated count
+        const [[comment]] = await connection.execute(
+          `SELECT likes FROM game_comments WHERE id = ?`,
+          [commentId]
+        );
+        newLikeCount = comment ? comment.likes : 0;
+        liked = true;
+      }
+
+      await connection.commit();
+      connection.release();
+
+      return { liked, likes: newLikeCount };
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
     }
   }
 
   /**
-   * Delete a comment
+   * Delete a comment - with transaction for data integrity
    */
   static async delete(commentId, userId) {
-    // Get comment to check ownership and get game_id
-    const [[comment]] = await pool.execute(
-      `SELECT id, game_id, user_id FROM game_comments WHERE id = ?`,
-      [commentId]
-    );
+    const connection = await pool.getConnection();
 
-    if (!comment) {
-      throw new Error('Comment not found');
+    try {
+      await connection.beginTransaction();
+
+      // Get comment to check ownership and get game_id with lock
+      const [[comment]] = await connection.execute(
+        `SELECT id, game_id, user_id FROM game_comments WHERE id = ? FOR UPDATE`,
+        [commentId]
+      );
+
+      if (!comment) {
+        await connection.rollback();
+        connection.release();
+        throw new Error('Comment not found');
+      }
+
+      if (comment.user_id !== userId) {
+        await connection.rollback();
+        connection.release();
+        throw new Error('Not authorized to delete this comment');
+      }
+
+      // Count replies that will be deleted
+      const [[{ replyCount }]] = await connection.execute(
+        `SELECT COUNT(*) as replyCount FROM game_comments WHERE parent_id = ?`,
+        [commentId]
+      );
+
+      // Delete comment likes first
+      await connection.execute(
+        `DELETE FROM comment_likes WHERE comment_id = ? OR comment_id IN (SELECT id FROM game_comments WHERE parent_id = ?)`,
+        [commentId, commentId]
+      );
+
+      // Delete replies
+      await connection.execute(
+        `DELETE FROM game_comments WHERE parent_id = ?`,
+        [commentId]
+      );
+
+      // Delete comment
+      await connection.execute(
+        `DELETE FROM game_comments WHERE id = ?`,
+        [commentId]
+      );
+
+      // Update game comments count atomically
+      const totalDeleted = 1 + replyCount;
+      await connection.execute(
+        `UPDATE games SET comments_count = GREATEST(0, comments_count - ?) WHERE id = ?`,
+        [totalDeleted, comment.game_id]
+      );
+
+      await connection.commit();
+      connection.release();
+
+      return { deleted: true, deletedCount: totalDeleted };
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
     }
-
-    if (comment.user_id !== userId) {
-      throw new Error('Not authorized to delete this comment');
-    }
-
-    // Count replies that will be deleted
-    const [[{ replyCount }]] = await pool.execute(
-      `SELECT COUNT(*) as replyCount FROM game_comments WHERE parent_id = ?`,
-      [commentId]
-    );
-
-    // Delete comment (cascade will delete replies)
-    await pool.execute(`DELETE FROM game_comments WHERE id = ?`, [commentId]);
-
-    // Update game comments count
-    const totalDeleted = 1 + replyCount;
-    await pool.execute(
-      `UPDATE games SET comments_count = comments_count - ? WHERE id = ?`,
-      [totalDeleted, comment.game_id]
-    );
-
-    return { deleted: true };
   }
 
   /**

@@ -1,6 +1,7 @@
 /**
  * Unified API Client for TikTok Games
  * Single URL connection for all app/admin/server communication
+ * Includes retry logic, token refresh, and error handling
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,9 +10,17 @@ import { Game, User, Comment, FetchGamesParams, ApiResponse, PaginatedResponse }
 // Single URL configuration - change this to your server URL
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private refreshToken: string | null = null;
+  private isRefreshing: boolean = false;
+  private refreshQueue: Array<() => void> = [];
+  private lastSyncTimestamp: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -25,12 +34,20 @@ class ApiClient {
   }
 
   /**
+   * Set refresh token
+   */
+  setRefreshToken(refreshToken: string | null) {
+    this.refreshToken = refreshToken;
+  }
+
+  /**
    * Get stored token
    */
   async getStoredToken(): Promise<string | null> {
     if (this.token) return this.token;
     try {
       this.token = await AsyncStorage.getItem('userToken');
+      this.refreshToken = await AsyncStorage.getItem('refreshToken');
       return this.token;
     } catch {
       return null;
@@ -38,11 +55,19 @@ class ApiClient {
   }
 
   /**
-   * Make HTTP request
+   * Delay helper for retry logic
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Make HTTP request with retry logic
    */
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryCount: number = 0
   ): Promise<T> {
     const token = await this.getStoredToken();
 
@@ -55,18 +80,72 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || data.error || 'Request failed');
+      // Handle token expiration
+      if (response.status === 401 && data.code === 'TOKEN_EXPIRED') {
+        // Clear stored token on expiration
+        await this.clearTokens();
+        throw new Error('Session expired. Please login again.');
+      }
+
+      if (!response.ok) {
+        const error = new Error(data.message || data.error || 'Request failed') as any;
+        error.status = response.status;
+        error.code = data.code;
+        throw error;
+      }
+
+      return data;
+    } catch (error: any) {
+      // Don't retry auth errors
+      if (error.status === 401 || error.status === 403) {
+        throw error;
+      }
+
+      // Retry on network errors or server errors (5xx)
+      const shouldRetry =
+        !error.status || // Network error
+        (error.status >= 500 && error.status < 600); // Server error
+
+      if (shouldRetry && retryCount < MAX_RETRIES) {
+        const delayMs = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+        console.log(`Retrying request to ${endpoint} in ${delayMs}ms (attempt ${retryCount + 1})`);
+        await this.delay(delayMs);
+        return this.request<T>(endpoint, options, retryCount + 1);
+      }
+
+      throw error;
     }
+  }
 
-    return data;
+  /**
+   * Clear stored tokens
+   */
+  private async clearTokens(): Promise<void> {
+    this.token = null;
+    this.refreshToken = null;
+    await AsyncStorage.multiRemove(['userToken', 'refreshToken']);
+  }
+
+  /**
+   * Get last sync timestamp
+   */
+  getLastSyncTimestamp(): string | null {
+    return this.lastSyncTimestamp;
+  }
+
+  /**
+   * Set last sync timestamp
+   */
+  setLastSyncTimestamp(timestamp: string): void {
+    this.lastSyncTimestamp = timestamp;
   }
 
   // ==================== AUTH ====================
@@ -342,6 +421,77 @@ class ApiClient {
 
   async healthCheck(): Promise<any> {
     return this.request('/health');
+  }
+
+  // ==================== SYNC ====================
+
+  async syncChanges(since?: string): Promise<{
+    games: Game[];
+    userLikes: number[];
+    userFavorites: number[];
+    notifications: any[];
+    syncTimestamp: string;
+    hasMore: boolean;
+  }> {
+    const timestamp = since || this.lastSyncTimestamp || new Date(0).toISOString();
+    const response = await this.request<any>(`/api/sync/changes?since=${encodeURIComponent(timestamp)}`);
+
+    if (response.syncTimestamp) {
+      this.lastSyncTimestamp = response.syncTimestamp;
+    }
+
+    return {
+      games: response.data?.games || [],
+      userLikes: response.data?.userLikes || [],
+      userFavorites: response.data?.userFavorites || [],
+      notifications: response.data?.notifications || [],
+      syncTimestamp: response.syncTimestamp,
+      hasMore: response.hasMore || false
+    };
+  }
+
+  async syncFull(page: number = 1, limit: number = 50): Promise<{
+    games: Game[];
+    userLikes: number[];
+    userFavorites: number[];
+    userRatings: Array<{ game_id: number; rating: number }>;
+    notifications: any[];
+    pagination: any;
+    syncTimestamp: string;
+  }> {
+    const response = await this.request<any>(`/api/sync/full?page=${page}&limit=${limit}`);
+
+    if (response.syncTimestamp) {
+      this.lastSyncTimestamp = response.syncTimestamp;
+    }
+
+    return {
+      games: response.data?.games || [],
+      userLikes: response.data?.userLikes || [],
+      userFavorites: response.data?.userFavorites || [],
+      userRatings: response.data?.userRatings || [],
+      notifications: response.data?.notifications || [],
+      pagination: response.pagination,
+      syncTimestamp: response.syncTimestamp
+    };
+  }
+
+  async syncGame(gameId: string): Promise<Game & { isLiked: boolean; isFavorited: boolean; userRating: number | null }> {
+    const response = await this.request<any>(`/api/sync/game/${gameId}`);
+    return response.data;
+  }
+
+  async syncBatchGames(gameIds: string[]): Promise<Array<Game & { isLiked: boolean; isFavorited: boolean }>> {
+    const response = await this.request<any>(`/api/sync/games/batch`, {
+      method: 'POST',
+      body: JSON.stringify({ gameIds: gameIds.map(id => parseInt(id)) }),
+    });
+    return response.data || [];
+  }
+
+  async heartbeat(): Promise<{ status: string; timestamp: string }> {
+    const response = await this.request<any>('/api/sync/heartbeat');
+    return response;
   }
 }
 
