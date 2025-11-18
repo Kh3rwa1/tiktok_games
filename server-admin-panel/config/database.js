@@ -1,28 +1,48 @@
 /**
- * MySQL Database Configuration for cPanel/phpMyAdmin
+ * MySQL Database Configuration
+ * Uses centralized config for easy deployment
  */
 
 const mysql = require('mysql2/promise');
+const { config } = require('./index');
 
-// Create connection pool
+// Create connection pool with config values
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'tiktok_games',
+  host: config.database.host,
+  port: config.database.port,
+  user: config.database.user,
+  password: config.database.password,
+  database: config.database.name,
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: config.database.connectionLimit,
+  queueLimit: config.database.queueLimit,
+  // Additional security options
+  multipleStatements: false, // Prevent SQL injection via multiple statements
+  charset: 'utf8mb4',
+  timezone: 'Z', // Use UTC
 });
 
-// Test connection
-const testConnection = async () => {
-  try {
-    const connection = await pool.getConnection();
-    console.log('✅ MySQL Database connected successfully');
-    connection.release();
-  } catch (error) {
-    console.error('❌ MySQL connection error:', error.message);
+// Test connection with retry logic
+const testConnection = async (retries = 3) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const connection = await pool.getConnection();
+      console.log('Database connected successfully');
+      console.log(`  Host: ${config.database.host}:${config.database.port}`);
+      console.log(`  Database: ${config.database.name}`);
+      connection.release();
+      return true;
+    } catch (error) {
+      console.error(`Database connection attempt ${attempt}/${retries} failed:`, error.message);
+      if (attempt < retries) {
+        const delay = attempt * 2000;
+        console.log(`Retrying in ${delay / 1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        console.error('All database connection attempts failed');
+        throw error;
+      }
+    }
   }
 };
 
@@ -44,11 +64,16 @@ const initDatabase = async () => {
         total_play_time INT DEFAULT 0,
         is_active BOOLEAN DEFAULT TRUE,
         role ENUM('user', 'admin') DEFAULT 'user',
+        last_login TIMESTAMP NULL,
+        password_changed_at TIMESTAMP NULL,
+        failed_login_attempts INT DEFAULT 0,
+        locked_until TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_username (username),
-        INDEX idx_email (email)
-      )
+        INDEX idx_email (email),
+        INDEX idx_role (role)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // Create games table
@@ -83,11 +108,12 @@ const initDatabase = async () => {
         INDEX idx_likes (likes DESC),
         INDEX idx_rating (average_rating DESC),
         INDEX idx_featured (is_featured, plays DESC),
+        INDEX idx_active (is_active),
         FULLTEXT idx_search (title, description)
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Create game_likes table (for tracking who liked what)
+    // Create game_likes table
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS game_likes (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -97,7 +123,7 @@ const initDatabase = async () => {
         UNIQUE KEY unique_like (game_id, user_id),
         FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // Create game_ratings table
@@ -112,7 +138,7 @@ const initDatabase = async () => {
         UNIQUE KEY unique_rating (game_id, user_id),
         FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // Create user_favorites table
@@ -125,7 +151,7 @@ const initDatabase = async () => {
         UNIQUE KEY unique_favorite (user_id, game_id),
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // Create play_history table
@@ -139,10 +165,10 @@ const initDatabase = async () => {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
         INDEX idx_user_history (user_id, played_at DESC)
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Create app_settings table for admin configuration
+    // Create app_settings table
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS app_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -150,13 +176,14 @@ const initDatabase = async () => {
         setting_value TEXT,
         setting_type ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
         description VARCHAR(500),
+        is_public BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_key (setting_key)
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Create notifications table for in-app notifications
+    // Create notifications table
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -175,10 +202,10 @@ const initDatabase = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
         INDEX idx_active (is_active, start_date, end_date)
-      )
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Create push_notifications table for OneSignal
+    // Create push_notifications table
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS push_notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -188,46 +215,85 @@ const initDatabase = async () => {
         segment VARCHAR(100) DEFAULT 'All',
         onesignal_id VARCHAR(100),
         status ENUM('pending', 'sent', 'failed') DEFAULT 'pending',
+        error_message TEXT,
         sent_at TIMESTAMP NULL,
         created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-      )
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // Insert default app settings if not exist
+    // Create audit_log table for security tracking
     await connection.execute(`
-      INSERT IGNORE INTO app_settings (setting_key, setting_value, setting_type, description) VALUES
-      ('app_name', 'TikTok Games', 'string', 'Application name displayed to users'),
-      ('app_description', 'Play amazing HTML5 games', 'string', 'Application description'),
-      ('app_version', '1.0.0', 'string', 'Current application version'),
-      ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode'),
-      ('onesignal_app_id', '', 'string', 'OneSignal App ID for push notifications'),
-      ('onesignal_api_key', '', 'string', 'OneSignal REST API Key'),
-      ('max_upload_size', '50', 'number', 'Maximum upload size in MB'),
-      ('allowed_game_formats', '["zip"]', 'json', 'Allowed game upload formats'),
-      ('contact_email', '', 'string', 'Contact email address'),
-      ('app_name', 'TikTok Games', 'string', 'Application display name'),
-      ('app_description', 'Play amazing HTML5 games', 'string', 'Application description'),
-      ('app_version', '1.0.0', 'string', 'Current app version'),
-      ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode'),
-      ('onesignal_app_id', '', 'string', 'OneSignal App ID for push notifications'),
-      ('onesignal_api_key', '', 'string', 'OneSignal REST API Key'),
-      ('onesignal_enabled', 'false', 'boolean', 'Enable OneSignal push notifications'),
-      ('max_upload_size', '100', 'number', 'Maximum game upload size in MB'),
-      ('allowed_game_types', '["html", "zip"]', 'json', 'Allowed game file types'),
-      ('featured_games_count', '10', 'number', 'Number of featured games to display'),
-      ('analytics_enabled', 'true', 'boolean', 'Enable analytics tracking'),
-      ('support_email', 'support@example.com', 'string', 'Support contact email'),
-      ('privacy_policy_url', '', 'string', 'Privacy policy URL'),
-      ('terms_url', '', 'string', 'Terms of service URL')
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        action VARCHAR(100) NOT NULL,
+        resource_type VARCHAR(50),
+        resource_id INT,
+        details JSON,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_user (user_id),
+        INDEX idx_action (action),
+        INDEX idx_created (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Insert default app settings
+    await connection.execute(`
+      INSERT IGNORE INTO app_settings (setting_key, setting_value, setting_type, description, is_public) VALUES
+      ('app_name', '${config.app.name}', 'string', 'Application name displayed to users', true),
+      ('app_description', '${config.app.description}', 'string', 'Application description', true),
+      ('app_version', '${config.app.version}', 'string', 'Current application version', true),
+      ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode', false),
+      ('onesignal_app_id', '', 'string', 'OneSignal App ID for push notifications', false),
+      ('onesignal_api_key', '', 'string', 'OneSignal REST API Key', false),
+      ('onesignal_enabled', 'false', 'boolean', 'Enable OneSignal push notifications', false),
+      ('max_upload_size', '100', 'number', 'Maximum game upload size in MB', false),
+      ('max_thumbnail_size', '5', 'number', 'Maximum thumbnail size in MB', false),
+      ('allowed_game_types', '["zip"]', 'json', 'Allowed game file types', false),
+      ('featured_games_count', '10', 'number', 'Number of featured games to display', false),
+      ('analytics_enabled', 'true', 'boolean', 'Enable analytics tracking', false),
+      ('support_email', '${config.app.supportEmail}', 'string', 'Support contact email', true),
+      ('privacy_policy_url', '', 'string', 'Privacy policy URL', true),
+      ('terms_url', '', 'string', 'Terms of service URL', true),
+      ('registration_enabled', 'true', 'boolean', 'Allow new user registrations', false),
+      ('guest_play_enabled', 'true', 'boolean', 'Allow guest gameplay', false),
+      ('comments_enabled', 'true', 'boolean', 'Enable game comments', false),
+      ('ratings_enabled', 'true', 'boolean', 'Enable game ratings', false)
     `);
 
     connection.release();
-    console.log('✅ Database tables initialized');
+    console.log('Database tables initialized successfully');
   } catch (error) {
-    console.error('❌ Database initialization error:', error.message);
+    console.error('Database initialization error:', error.message);
+    throw error;
   }
 };
 
-module.exports = { pool, testConnection, initDatabase };
+// Log audit event
+const logAudit = async (userId, action, resourceType, resourceId, details, req) => {
+  try {
+    await pool.execute(
+      `INSERT INTO audit_log (user_id, action, resource_type, resource_id, details, ip_address, user_agent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        action,
+        resourceType,
+        resourceId,
+        JSON.stringify(details),
+        req?.ip || null,
+        req?.headers?.['user-agent'] || null
+      ]
+    );
+  } catch (error) {
+    console.error('Audit log error:', error.message);
+  }
+};
+
+module.exports = { pool, testConnection, initDatabase, logAudit };
