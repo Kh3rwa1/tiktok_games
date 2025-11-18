@@ -106,7 +106,7 @@ router.get('/stats', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
-    res.status(500).json({ message: 'Error fetching statistics' });
+    res.status(500).json({ success: false, error: 'Error fetching statistics' });
   }
 });
 
@@ -133,7 +133,8 @@ router.get('/settings', protect, adminOnly, async (req, res) => {
         try {
           value = JSON.parse(value);
         } catch (e) {
-          value = s.setting_value;
+          console.error(`Failed to parse JSON setting ${s.setting_key}:`, e.message);
+          value = null; // Return null for invalid JSON instead of raw string
         }
       }
       settingsObj[s.setting_key] = {
@@ -146,14 +147,17 @@ router.get('/settings', protect, adminOnly, async (req, res) => {
     res.json({ success: true, data: settingsObj });
   } catch (error) {
     console.error('Error fetching settings:', error);
-    res.status(500).json({ message: 'Error fetching settings' });
+    res.status(500).json({ success: false, error: 'Error fetching settings' });
   }
 });
 
 // Update app settings
 router.put('/settings', protect, adminOnly, async (req, res) => {
+  const connection = await pool.getConnection();
   try {
     const { settings } = req.body;
+
+    await connection.beginTransaction();
 
     for (const [key, value] of Object.entries(settings)) {
       let stringValue = value;
@@ -165,16 +169,24 @@ router.put('/settings', protect, adminOnly, async (req, res) => {
         stringValue = String(value);
       }
 
-      await pool.execute(
+      await connection.execute(
         'UPDATE app_settings SET setting_value = ? WHERE setting_key = ?',
         [stringValue, key]
       );
     }
 
+    await connection.commit();
+
+    // Log the settings update
+    await logAudit(req.user.id, 'SETTINGS_UPDATED', 'settings', null, { changes: Object.keys(settings) }, req);
+
     res.json({ success: true, message: 'Settings updated successfully' });
   } catch (error) {
+    await connection.rollback();
     console.error('Error updating settings:', error);
-    res.status(500).json({ message: 'Error updating settings' });
+    res.status(500).json({ success: false, error: 'Error updating settings' });
+  } finally {
+    connection.release();
   }
 });
 
@@ -200,7 +212,7 @@ router.post('/settings', protect, adminOnly, async (req, res) => {
     res.json({ success: true, message: 'Setting saved successfully' });
   } catch (error) {
     console.error('Error saving setting:', error);
-    res.status(500).json({ message: 'Error saving setting' });
+    res.status(500).json({ success: false, error: 'Error saving setting' });
   }
 });
 
@@ -243,7 +255,7 @@ router.get('/users', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({ message: 'Error fetching users' });
+    res.status(500).json({ success: false, error: 'Error fetching users' });
   }
 });
 
@@ -266,7 +278,7 @@ router.put('/users/:id/role', protect, adminOnly, async (req, res) => {
     res.json({ success: true, message: `User role updated to ${role}` });
   } catch (error) {
     console.error('Error updating user role:', error);
-    res.status(500).json({ message: 'Error updating user role' });
+    res.status(500).json({ success: false, error: 'Error updating user role' });
   }
 });
 
@@ -294,7 +306,7 @@ router.put('/users/:id/toggle-active', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error toggling user status:', error);
-    res.status(500).json({ message: 'Error updating user status' });
+    res.status(500).json({ success: false, error: 'Error updating user status' });
   }
 });
 
@@ -312,7 +324,7 @@ router.delete('/users/:id', protect, adminOnly, async (req, res) => {
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
     console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Error deleting user' });
+    res.status(500).json({ success: false, error: 'Error deleting user' });
   }
 });
 
@@ -340,7 +352,7 @@ router.get('/games', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching games:', error);
-    res.status(500).json({ message: 'Error fetching games' });
+    res.status(500).json({ success: false, error: 'Error fetching games' });
   }
 });
 
@@ -354,7 +366,7 @@ router.get('/games/:id', protect, adminOnly, async (req, res) => {
     res.json({ success: true, data: game });
   } catch (error) {
     console.error('Error fetching game:', error);
-    res.status(500).json({ message: 'Error fetching game' });
+    res.status(500).json({ success: false, error: 'Error fetching game' });
   }
 });
 
@@ -382,12 +394,22 @@ router.post('/games', protect, adminOnly, upload.fields([
 
       await fs.mkdir(gamesDir, { recursive: true });
 
-      // Extract ZIP file
-      const zip = new AdmZip(gameFile.path);
-      zip.extractAllTo(gamesDir, true);
+      // Extract ZIP file with error handling
+      try {
+        const zip = new AdmZip(gameFile.path);
+        zip.extractAllTo(gamesDir, true);
+      } catch (zipError) {
+        // Clean up on error
+        await fs.rm(gamesDir, { recursive: true, force: true });
+        await fs.unlink(gameFile.path).catch(() => {});
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid or corrupted ZIP file: ' + zipError.message
+        });
+      }
 
       // Delete temp file
-      await fs.unlink(gameFile.path);
+      await fs.unlink(gameFile.path).catch(() => {});
 
       // Find index.html
       const files = await fs.readdir(gamesDir);
@@ -494,12 +516,22 @@ router.put('/games/:id', protect, adminOnly, upload.fields([
 
       await fs.mkdir(gamesDir, { recursive: true });
 
-      // Extract ZIP file
-      const zip = new AdmZip(gameFile.path);
-      zip.extractAllTo(gamesDir, true);
+      // Extract ZIP file with error handling
+      try {
+        const zip = new AdmZip(gameFile.path);
+        zip.extractAllTo(gamesDir, true);
+      } catch (zipError) {
+        // Clean up on error
+        await fs.rm(gamesDir, { recursive: true, force: true });
+        await fs.unlink(gameFile.path).catch(() => {});
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid or corrupted ZIP file: ' + zipError.message
+        });
+      }
 
       // Delete temp file
-      await fs.unlink(gameFile.path);
+      await fs.unlink(gameFile.path).catch(() => {});
 
       // Find index.html and restructure if needed
       const files = await fs.readdir(gamesDir);
@@ -568,7 +600,7 @@ router.delete('/games/:id', protect, adminOnly, async (req, res) => {
     res.json({ success: true, message: 'Game deleted' });
   } catch (error) {
     console.error('Error deleting game:', error);
-    res.status(500).json({ message: 'Error deleting game' });
+    res.status(500).json({ success: false, error: 'Error deleting game' });
   }
 });
 
@@ -592,7 +624,7 @@ router.put('/games/:id/toggle-featured', protect, adminOnly, async (req, res) =>
     });
   } catch (error) {
     console.error('Error toggling featured status:', error);
-    res.status(500).json({ message: 'Error updating game' });
+    res.status(500).json({ success: false, error: 'Error updating game' });
   }
 });
 
@@ -616,7 +648,7 @@ router.put('/games/:id/toggle-active', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error toggling active status:', error);
-    res.status(500).json({ message: 'Error updating game' });
+    res.status(500).json({ success: false, error: 'Error updating game' });
   }
 });
 
@@ -655,7 +687,7 @@ router.get('/games/:id/files', protect, adminOnly, async (req, res) => {
     res.json({ success: true, data: files });
   } catch (error) {
     console.error('Error getting game files:', error);
-    res.status(500).json({ message: 'Error getting game files' });
+    res.status(500).json({ success: false, error: 'Error getting game files' });
   }
 });
 
@@ -693,7 +725,7 @@ router.get('/notifications', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching notifications:', error);
-    res.status(500).json({ message: 'Error fetching notifications' });
+    res.status(500).json({ success: false, error: 'Error fetching notifications' });
   }
 });
 
@@ -719,7 +751,7 @@ router.post('/notifications', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating notification:', error);
-    res.status(500).json({ message: 'Error creating notification' });
+    res.status(500).json({ success: false, error: 'Error creating notification' });
   }
 });
 
@@ -745,7 +777,7 @@ router.put('/notifications/:id', protect, adminOnly, async (req, res) => {
     res.json({ success: true, message: 'Notification updated' });
   } catch (error) {
     console.error('Error updating notification:', error);
-    res.status(500).json({ message: 'Error updating notification' });
+    res.status(500).json({ success: false, error: 'Error updating notification' });
   }
 });
 
@@ -756,7 +788,7 @@ router.delete('/notifications/:id', protect, adminOnly, async (req, res) => {
     res.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
     console.error('Error deleting notification:', error);
-    res.status(500).json({ message: 'Error deleting notification' });
+    res.status(500).json({ success: false, error: 'Error deleting notification' });
   }
 });
 
@@ -775,7 +807,7 @@ router.get('/notifications/active', async (req, res) => {
     res.json({ success: true, data: notifications });
   } catch (error) {
     console.error('Error fetching active notifications:', error);
-    res.status(500).json({ message: 'Error fetching notifications' });
+    res.status(500).json({ success: false, error: 'Error fetching notifications' });
   }
 });
 
@@ -813,7 +845,7 @@ router.get('/push-notifications', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching push notifications:', error);
-    res.status(500).json({ message: 'Error fetching push notifications' });
+    res.status(500).json({ success: false, error: 'Error fetching push notifications' });
   }
 });
 
@@ -889,7 +921,7 @@ router.post('/push-notifications', protect, adminOnly, async (req, res) => {
     }
   } catch (error) {
     console.error('Error sending push notification:', error);
-    res.status(500).json({ message: 'Error sending push notification' });
+    res.status(500).json({ success: false, error: 'Error sending push notification' });
   }
 });
 
@@ -945,7 +977,7 @@ router.get('/env', protect, adminOnly, async (req, res) => {
     res.json({ success: true, data: envVars });
   } catch (error) {
     console.error('Error reading .env:', error);
-    res.status(500).json({ message: 'Error reading environment variables' });
+    res.status(500).json({ success: false, error: 'Error reading environment variables' });
   }
 });
 
@@ -987,7 +1019,7 @@ router.put('/env', protect, adminOnly, async (req, res) => {
     res.json({ success: true, message: 'Environment variables updated. Restart server to apply changes.' });
   } catch (error) {
     console.error('Error updating .env:', error);
-    res.status(500).json({ message: 'Error updating environment variables' });
+    res.status(500).json({ success: false, error: 'Error updating environment variables' });
   }
 });
 
@@ -1027,7 +1059,7 @@ router.post('/setup', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating admin:', error);
-    res.status(500).json({ message: 'Error creating admin user' });
+    res.status(500).json({ success: false, error: 'Error creating admin user' });
   }
 });
 
@@ -1063,7 +1095,7 @@ router.get('/system-info', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting system info:', error);
-    res.status(500).json({ message: 'Error getting system information' });
+    res.status(500).json({ success: false, error: 'Error getting system information' });
   }
 });
 
@@ -1126,7 +1158,7 @@ router.get('/audit-log', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching audit log:', error);
-    res.status(500).json({ message: 'Error fetching audit log' });
+    res.status(500).json({ success: false, error: 'Error fetching audit log' });
   }
 });
 
@@ -1234,7 +1266,7 @@ router.get('/database-info', protect, adminOnly, async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting database info:', error);
-    res.status(500).json({ message: 'Error getting database information' });
+    res.status(500).json({ success: false, error: 'Error getting database information' });
   }
 });
 
