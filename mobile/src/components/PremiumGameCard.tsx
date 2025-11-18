@@ -157,10 +157,16 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
         <View style={styles.imageContainer}>
           {!imageError ? (
             <AnimatedImage
-              source={{ uri: game.thumbnail }}
+              source={{
+                uri: game.thumbnail,
+                // Enable image caching for better performance
+                cache: 'force-cache',
+              }}
               style={[styles.image, imageAnimatedStyle]}
               resizeMode="cover"
               onError={() => setImageError(true)}
+              // Fade in animation for smoother image loading
+              fadeDuration={200}
             />
           ) : (
             <View style={[styles.image, styles.imagePlaceholder]}>
@@ -197,8 +203,8 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
           </View>
         </View>
 
-        {/* Glassmorphism Info Container */}
-        <BlurView intensity={80} tint="dark" style={styles.infoContainer}>
+        {/* Glassmorphism Info Container - Reduced blur for better performance */}
+        <BlurView intensity={50} tint="dark" style={styles.infoContainer}>
           <View style={styles.infoContent}>
             {/* Title and Creator */}
             <View style={styles.titleContainer}>
