@@ -4,11 +4,12 @@ const { body } = require('express-validator');
 const {
   register,
   login,
+  refreshToken,
   getMe,
   updateProfile,
   changePassword
 } = require('../controllers/authController');
-const { protect } = require('../middleware/auth');
+const { protect, refreshAuth } = require('../middleware/auth');
 
 // Validation rules
 const registerValidation = [
@@ -42,6 +43,7 @@ const loginValidation = [
 // Public routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+router.post('/refresh', refreshToken);
 
 // Protected routes
 router.get('/me', protect, getMe);
