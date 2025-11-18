@@ -70,6 +70,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
   const [playStartTime, setPlayStartTime] = useState<number>(Date.now());
   const [showRating, setShowRating] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
 
   const webViewRef = useRef<WebView>(null);
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -96,7 +97,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
     const startTime = Date.now();
     setPlayStartTime(startTime);
 
-    // Set loading timeout (10 seconds max - reduced from 15 for better UX)
+    // Set loading timeout (5 seconds max - reduced for better UX)
     loadingTimeout.current = setTimeout(() => {
       if (isLoading) {
         setIsLoading(false);
@@ -109,7 +110,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
           visibilityTime: 4000,
         });
       }
-    }, 10000);
+    }, 5000);
 
     return () => {
       // Clean up timeouts
@@ -322,9 +323,11 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
           onLoadStart={() => {
             setIsLoading(true);
             setLoadError(false);
+            setLoadProgress(0);
           }}
           onLoadEnd={() => {
             setIsLoading(false);
+            setLoadProgress(100);
             // Clear loading timeout on successful load
             if (loadingTimeout.current) {
               clearTimeout(loadingTimeout.current);
@@ -333,6 +336,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
           }}
           onLoadProgress={({ nativeEvent }) => {
             // Update progress for better UX
+            setLoadProgress(Math.round(nativeEvent.progress * 100));
             if (nativeEvent.progress > 0.8) {
               // Almost loaded, clear timeout early
               if (loadingTimeout.current) {
@@ -410,11 +414,15 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
           }}
         />
 
-        {/* Loading Indicator */}
+        {/* Loading Indicator with Progress */}
         {isLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FF6B6B" />
             <Text style={styles.loadingText}>Loading {game.title}...</Text>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${loadProgress}%` }]} />
+            </View>
+            <Text style={styles.progressText}>{loadProgress}%</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -587,6 +595,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginTop: 16,
+  },
+  progressBarContainer: {
+    width: '60%',
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 3,
+    marginTop: 16,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#FF6B6B',
+    borderRadius: 3,
+  },
+  progressText: {
+    color: '#999',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 8,
   },
   controlsContainer: {
     ...StyleSheet.absoluteFillObject,

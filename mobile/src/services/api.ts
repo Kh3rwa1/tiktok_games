@@ -14,6 +14,15 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
+// Cache configuration
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+const CACHE_KEY_PREFIX = 'api_cache_';
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
@@ -25,9 +34,73 @@ class ApiClient {
   }>[] = [];
   private lastSyncTimestamp: string | null = null;
   private onAuthError: (() => void) | null = null;
+  private memoryCache: Map<string, CacheEntry<any>> = new Map();
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Get cached response from memory or AsyncStorage
+   */
+  private async getCachedResponse<T>(key: string): Promise<T | null> {
+    // Check memory cache first
+    const memCached = this.memoryCache.get(key);
+    if (memCached && Date.now() - memCached.timestamp < CACHE_TTL) {
+      return memCached.data;
+    }
+
+    // Check AsyncStorage
+    try {
+      const cached = await AsyncStorage.getItem(CACHE_KEY_PREFIX + key);
+      if (cached) {
+        const parsed: CacheEntry<T> = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < CACHE_TTL) {
+          // Update memory cache
+          this.memoryCache.set(key, parsed);
+          return parsed.data;
+        }
+        // Remove expired cache
+        await AsyncStorage.removeItem(CACHE_KEY_PREFIX + key);
+      }
+    } catch {
+      // Ignore cache errors
+    }
+    return null;
+  }
+
+  /**
+   * Cache response to memory and AsyncStorage
+   */
+  private async setCachedResponse<T>(key: string, data: T): Promise<void> {
+    const entry: CacheEntry<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+
+    // Update memory cache
+    this.memoryCache.set(key, entry);
+
+    // Update AsyncStorage
+    try {
+      await AsyncStorage.setItem(CACHE_KEY_PREFIX + key, JSON.stringify(entry));
+    } catch {
+      // Ignore storage errors
+    }
+  }
+
+  /**
+   * Clear all cached responses
+   */
+  async clearCache(): Promise<void> {
+    this.memoryCache.clear();
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const cacheKeys = keys.filter(key => key.startsWith(CACHE_KEY_PREFIX));
+      await AsyncStorage.multiRemove(cacheKeys);
+    } catch {
+      // Ignore errors
+    }
   }
 
   /**
@@ -329,14 +402,30 @@ class ApiClient {
     if (params.order) queryParams.append('order', params.order);
     if (params.featured !== undefined) queryParams.append('featured', params.featured.toString());
 
-    const response = await this.request<ApiResponse<Game[]> & { pagination?: any }>(
-      `/api/games?${queryParams.toString()}`
-    );
+    const endpoint = `/api/games?${queryParams.toString()}`;
+    const cacheKey = `games_${queryParams.toString()}`;
 
-    return {
+    // Try to get cached response for non-search queries
+    if (!params.search) {
+      const cached = await this.getCachedResponse<{ games: Game[]; pagination: any }>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
+    const response = await this.request<ApiResponse<Game[]> & { pagination?: any }>(endpoint);
+
+    const result = {
       games: response.data || [],
       pagination: response.pagination || { page: 1, limit: 10, total: 0, pages: 0 }
     };
+
+    // Cache the response for non-search queries
+    if (!params.search) {
+      await this.setCachedResponse(cacheKey, result);
+    }
+
+    return result;
   }
 
   async getGameById(id: string): Promise<Game> {
@@ -367,25 +456,69 @@ class ApiClient {
   }
 
   async getTrending(limit: number = 10): Promise<Game[]> {
+    const cacheKey = `trending_${limit}`;
+
+    // Try to get cached response
+    const cached = await this.getCachedResponse<Game[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const response = await this.request<ApiResponse<Game[]>>(`/api/games/trending?limit=${limit}`);
-    return response.data || [];
+    const result = response.data || [];
+
+    // Cache the result
+    await this.setCachedResponse(cacheKey, result);
+
+    return result;
   }
 
   async getRecommended(limit: number = 10): Promise<Game[]> {
+    const cacheKey = `recommended_${limit}`;
+
+    // Try to get cached response
+    const cached = await this.getCachedResponse<Game[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const response = await this.request<ApiResponse<Game[]>>(`/api/games/recommended?limit=${limit}`);
-    return response.data || [];
+    const result = response.data || [];
+
+    // Cache the result
+    await this.setCachedResponse(cacheKey, result);
+
+    return result;
   }
 
   // ==================== SOCIAL / FEED ====================
 
   async getFeed(page: number = 1, limit: number = 10): Promise<{ games: Game[]; pagination: any }> {
+    const cacheKey = `feed_${page}_${limit}`;
+
+    // Try to get cached response for first page
+    if (page === 1) {
+      const cached = await this.getCachedResponse<{ games: Game[]; pagination: any }>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const response = await this.request<ApiResponse<Game[]> & { pagination: any }>(
       `/api/social/feed?page=${page}&limit=${limit}`
     );
-    return {
+
+    const result = {
       games: response.data || [],
       pagination: response.pagination
     };
+
+    // Cache first page results
+    if (page === 1) {
+      await this.setCachedResponse(cacheKey, result);
+    }
+
+    return result;
   }
 
   async getFollowingFeed(page: number = 1, limit: number = 10): Promise<{ games: Game[]; pagination: any }> {

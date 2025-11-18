@@ -6,7 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -25,6 +26,7 @@ import { PremiumGameCard, LoadingSkeleton } from '../components';
 import haptics from '../utils/haptics';
 
 const { width } = Dimensions.get('window');
+const CARD_HEIGHT = 200; // Approximate height of game card
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -90,6 +92,13 @@ export default function FavoritesScreen() {
         });
     }
   }, [favorites, sortBy]);
+
+  // Optimized getItemLayout for better scroll performance
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: CARD_HEIGHT + 15, // Card height + margin
+    offset: (CARD_HEIGHT + 15) * Math.floor(index / 2),
+    index,
+  }), []);
 
   const renderSortChip = ({ item }: { item: typeof SORT_OPTIONS[0] }) => {
     const isSelected = item.value === sortBy;
@@ -226,6 +235,13 @@ export default function FavoritesScreen() {
                   progressBackgroundColor="#FFFEF0"
                 />
               }
+              // Performance optimizations for smooth scrolling
+              maxToRenderPerBatch={6}
+              windowSize={10}
+              removeClippedSubviews={Platform.OS === 'android'}
+              initialNumToRender={6}
+              updateCellsBatchingPeriod={50}
+              getItemLayout={getItemLayout}
             />
           )}
         </>

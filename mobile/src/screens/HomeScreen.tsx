@@ -90,32 +90,25 @@ const AnimatedGameItem = React.memo(({
     (index + 1) * ITEM_HEIGHT,
   ];
 
+  // Simplified animations for better performance
   const animatedStyle = useAnimatedStyle(() => {
     const itemScale = interpolate(
       scrollY.value,
       inputRange,
-      [0.9, 1, 0.9],
+      [0.95, 1, 0.95],
       Extrapolate.CLAMP
     );
 
     const itemOpacity = interpolate(
       scrollY.value,
       inputRange,
-      [0.5, 1, 0.5],
-      Extrapolate.CLAMP
-    );
-
-    const translateY = interpolate(
-      scrollY.value,
-      inputRange,
-      [30, 0, -30],
+      [0.7, 1, 0.7],
       Extrapolate.CLAMP
     );
 
     return {
       transform: [
         { scale: itemScale * scale.value },
-        { translateY },
       ],
       opacity: itemOpacity * opacity.value,
     };
@@ -384,9 +377,9 @@ export default function HomeScreen({ navigation }: Props) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFEF0" />
 
-      {/* Premium Header with Blur */}
+      {/* Premium Header with Blur - Reduced intensity for better performance */}
       <Animated.View style={[styles.header, headerStyle]}>
-        <BlurView intensity={80} style={styles.headerBlur}>
+        <BlurView intensity={50} style={styles.headerBlur}>
           <LinearGradient
             colors={['rgba(0,0,0,0.9)', 'transparent']}
             style={styles.headerGradient}
@@ -501,7 +494,7 @@ export default function HomeScreen({ navigation }: Props) {
           style={styles.errorContainer}
           entering={FadeInUp.springify()}
         >
-          <BlurView intensity={90} style={styles.errorBlur}>
+          <BlurView intensity={50} style={styles.errorBlur}>
             <Text style={styles.errorText}>{error}</Text>
           </BlurView>
         </Animated.View>
