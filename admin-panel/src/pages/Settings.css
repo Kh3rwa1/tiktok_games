@@ -26,6 +26,7 @@
 .settings-header h3 {
   margin: 0;
   font-size: 1.25rem;
+  flex: 1;
 }
 
 .settings-body {
@@ -53,6 +54,9 @@
   font-size: 1rem;
   color: var(--color-black);
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .setting-description {
@@ -67,6 +71,12 @@
   width: 60px;
   height: 34px;
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-switch.large {
+  width: 80px;
+  height: 44px;
 }
 
 .toggle-switch input {
@@ -98,6 +108,13 @@
   transition: 0.1s;
 }
 
+.toggle-switch.large .toggle-slider:before {
+  height: 30px;
+  width: 30px;
+  left: 4px;
+  bottom: 4px;
+}
+
 input:checked + .toggle-slider {
   background: var(--color-toxic-green);
 }
@@ -106,15 +123,158 @@ input:checked + .toggle-slider:before {
   transform: translateX(26px);
 }
 
+.toggle-switch.large input:checked + .toggle-slider:before {
+  transform: translateX(36px);
+}
+
+input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .settings-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-md);
 }
 
+/* Status Badge */
+.status-badge {
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid currentColor;
+  margin-left: auto;
+}
+
+.status-badge.active {
+  background: var(--color-toxic-green);
+  color: var(--color-black);
+}
+
+.status-badge.inactive {
+  background: var(--color-error);
+  color: var(--color-white);
+}
+
+/* Master Toggle */
+.notification-master {
+  grid-column: span 2;
+}
+
+.master-toggle {
+  padding: var(--space-lg) 0;
+  border-bottom: var(--border-thick) solid var(--color-black) !important;
+}
+
+.master-toggle .setting-title {
+  font-size: 1.25rem;
+}
+
+.master-toggle .setting-description {
+  font-size: 1rem;
+}
+
+/* Service Status */
+.service-status {
+  display: flex;
+  gap: var(--space-lg);
+  padding-top: var(--space-md);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--color-gray-800);
+}
+
+/* Sub-settings */
+.sub-setting {
+  padding-left: var(--space-lg);
+  background: var(--color-gray-100);
+  margin: 0 calc(-1 * var(--space-lg));
+  padding-right: var(--space-lg);
+}
+
+.sub-setting .setting-title {
+  font-size: 0.9rem;
+}
+
+.sub-setting .setting-description {
+  font-size: 0.8rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.action-buttons button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.875rem;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-black);
+  border: var(--border-thick) solid var(--color-black);
+}
+
+.btn-outline:hover {
+  background: var(--color-gray-100);
+}
+
+.full-width {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Spin animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+
+  .notification-master {
+    grid-column: span 1;
+  }
+
+  .service-status {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons button {
+    width: 100%;
   }
 }
