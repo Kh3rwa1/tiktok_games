@@ -8,7 +8,14 @@
     "dev": "nodemon server.js",
     "validate": "node -e \"require('./config').validateConfig()\""
   },
-  "keywords": ["games", "api", "mysql", "cpanel", "admin-panel", "onesignal"],
+  "keywords": [
+    "games",
+    "api",
+    "mysql",
+    "cpanel",
+    "admin-panel",
+    "onesignal"
+  ],
   "author": "",
   "license": "MIT",
   "engines": {
@@ -28,7 +35,8 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.5",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

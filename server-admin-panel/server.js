@@ -11,6 +11,10 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const crypto = require('crypto');
+const http = require('http');
+
+// WebSocket service
+const websocketService = require('./services/websocket');
 
 // Load configuration
 const { config, validateConfig, ensureDirectories } = require('./config');
@@ -186,6 +190,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/games', require('./routes/games'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/social', require('./routes/social'));
+app.use('/api/sync', require('./routes/sync'));
 
 // Serve static files (admin panel and game assets)
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -485,7 +490,13 @@ const startServerWithRef = async () => {
     // Initialize database tables
     await initDatabase();
 
-    server = app.listen(PORT, () => {
+    // Create HTTP server for Express and WebSocket
+    server = http.createServer(app);
+
+    // Initialize WebSocket service
+    websocketService.initialize(server);
+
+    server.listen(PORT, () => {
       console.log('\n========================================');
       console.log(`  ${config.app.name} Server Started`);
       console.log('========================================');
@@ -494,6 +505,7 @@ const startServerWithRef = async () => {
       console.log(`  Version: ${config.app.version}`);
       console.log(`  Domain: ${config.domain}`);
       console.log(`  Node: ${process.version}`);
+      console.log(`  WebSocket: Enabled`);
       if (config.maintenance.enabled) {
         console.log(`  Mode: MAINTENANCE`);
       }

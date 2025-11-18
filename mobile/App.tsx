@@ -43,6 +43,7 @@ const UltraSmoothTheme = {
 
 // Stores
 import { useAuthStore } from './src/store/authStore';
+import { useGameStore } from './src/store/gameStore';
 
 // Components
 import { ErrorBoundary, LoadingSkeleton } from './src/components';
@@ -167,11 +168,20 @@ function LoadingScreen() {
  */
 export default function App() {
   const { user, isLoading } = useAuthStore();
+  const { initSync, isOnline, isSyncing } = useGameStore();
 
   useEffect(() => {
     // Any app-level initialization can go here
     console.log('TikTok Games App Initialized');
   }, []);
+
+  // Initialize sync when user is logged in
+  useEffect(() => {
+    if (user) {
+      console.log('Initializing sync for user:', user.username);
+      initSync();
+    }
+  }, [user, initSync]);
 
   // Show loading screen while determining auth state
   if (isLoading) {
