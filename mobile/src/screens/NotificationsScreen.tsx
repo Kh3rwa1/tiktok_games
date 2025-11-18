@@ -22,14 +22,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useNotificationStore } from '../store/notificationStore';
 import { RootStackParamList, Notification } from '../types';
 import { LoadingSkeleton } from '../components';
 import { triggerMedium, triggerLight, triggerSuccess } from '../utils/haptics';
 
-type NotificationsScreenNavigationProp = NativeStackNavigationProp<
+type NotificationsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'Notifications'
 >;

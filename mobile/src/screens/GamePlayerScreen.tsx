@@ -31,7 +31,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RouteProp } from '@react-navigation/native';
 
 // Stores & Types
@@ -48,7 +48,7 @@ import {
 
 const { width, height } = Dimensions.get('window');
 
-type GamePlayerScreenNavigationProp = NativeStackNavigationProp<
+type GamePlayerScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'GamePlayer'
 >;
