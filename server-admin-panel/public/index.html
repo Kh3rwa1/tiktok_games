@@ -1673,14 +1673,14 @@
           body: JSON.stringify({ email, password })
         });
 
-        if (data.user.role !== 'admin') {
+        if (data.data.role !== 'admin') {
           showToast('Admin access required', 'error');
           return;
         }
 
-        state.token = data.token;
-        state.user = data.user;
-        localStorage.setItem('adminToken', data.token);
+        state.token = data.data.token;
+        state.user = data.data;
+        localStorage.setItem('adminToken', data.data.token);
         showToast('Login successful!', 'success');
         render();
       } catch (error) {
@@ -1876,9 +1876,14 @@
           method: 'POST',
           body: JSON.stringify({ appId, apiKey })
         });
-        showToast(`Connected! App: ${data.data.appName}, Players: ${data.data.players}`, 'success');
+
+        if (data.data && data.data.appName) {
+          showToast(`Connected! App: ${data.data.appName}, Players: ${data.data.players || 0}`, 'success');
+        } else {
+          showToast('Connection successful!', 'success');
+        }
       } catch (error) {
-        showToast(error.message, 'error');
+        showToast(error.message || 'Connection failed', 'error');
       }
     };
 
@@ -1981,8 +1986,23 @@
     const handleFileSelect = (input, labelId) => {
       const file = input.files[0];
       if (file) {
+        // Validate file size based on type
+        const isGameFile = input.id === 'gameFile';
+        const maxSize = isGameFile ? 100 * 1024 * 1024 : 5 * 1024 * 1024; // 100MB for games, 5MB for thumbnails
+        const maxSizeLabel = isGameFile ? '100MB' : '5MB';
+
+        if (file.size > maxSize) {
+          showToast(`File too large. Maximum: ${maxSizeLabel}`, 'error');
+          input.value = '';
+          return;
+        }
+
         document.getElementById(labelId).textContent = file.name;
-        input.parentElement.previousElementSibling.nextElementSibling.classList.add('has-file');
+        // Find the file-upload-area div and add has-file class
+        const uploadArea = input.previousElementSibling;
+        if (uploadArea && uploadArea.classList.contains('file-upload-area')) {
+          uploadArea.classList.add('has-file');
+        }
       }
     };
 
@@ -2002,17 +2022,44 @@
     const createGame = async (e) => {
       e.preventDefault();
 
+      const title = document.getElementById('gameTitle').value.trim();
+      const description = document.getElementById('gameDescription').value.trim();
       const gameFile = document.getElementById('gameFile').files[0];
       const thumbnail = document.getElementById('gameThumbnail').files[0];
+
+      // Validate title
+      if (!title || title.length < 3 || title.length > 100) {
+        showToast('Title must be between 3-100 characters', 'error');
+        return;
+      }
+
+      // Validate description
+      if (!description || description.length < 10 || description.length > 500) {
+        showToast('Description must be between 10-500 characters', 'error');
+        return;
+      }
 
       if (!gameFile) {
         showToast('Please select a game ZIP file', 'error');
         return;
       }
 
+      // Validate file size (100MB max)
+      const maxGameSize = 100 * 1024 * 1024;
+      if (gameFile.size > maxGameSize) {
+        showToast('Game file too large. Maximum: 100MB', 'error');
+        return;
+      }
+
+      // Validate thumbnail size (5MB max)
+      if (thumbnail && thumbnail.size > 5 * 1024 * 1024) {
+        showToast('Thumbnail too large. Maximum: 5MB', 'error');
+        return;
+      }
+
       const formData = new FormData();
-      formData.append('title', document.getElementById('gameTitle').value.trim());
-      formData.append('description', document.getElementById('gameDescription').value.trim());
+      formData.append('title', title);
+      formData.append('description', description);
       formData.append('category', document.getElementById('gameCategory').value);
       formData.append('difficulty', document.getElementById('gameDifficulty').value);
       formData.append('controls', document.getElementById('gameControls').value.trim());
@@ -2030,7 +2077,7 @@
       }
 
       try {
-        const response = await fetch(`${API_URL}/admin/games`, {
+        const response = await fetch(`/api/admin/games`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${state.token}`
@@ -2040,7 +2087,7 @@
 
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to upload game');
+          throw new Error(data.message || data.error || 'Failed to upload game');
         }
 
         showToast('Game uploaded successfully!', 'success');
@@ -2195,12 +2242,12 @@
       if (state.token) {
         try {
           const data = await api('/auth/me');
-          if (data.user.role !== 'admin') {
+          if (!data.data || data.data.role !== 'admin') {
             handleLogout();
             showToast('Admin access required', 'error');
             return;
           }
-          state.user = data.user;
+          state.user = data.data;
         } catch (error) {
           handleLogout();
         }
