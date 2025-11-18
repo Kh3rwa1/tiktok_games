@@ -45,6 +45,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 // Stores & Types
 import { useGameStore } from '../store/gameStore';
+import { useNotificationStore } from '../store/notificationStore';
 import { RootStackParamList, MainTabParamList, Game } from '../types';
 
 // Components
@@ -154,6 +155,7 @@ const AnimatedGameItem = React.memo(({
 
 export default function HomeScreen({ navigation }: Props) {
   const { feed, isLoading, error, fetchFeed, feedType, setFeedType, hasMoreFeed } = useGameStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -202,6 +204,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     loadInitialFeed();
+    fetchNotifications();
   }, []);
 
   const loadInitialFeed = async () => {
@@ -417,12 +420,19 @@ export default function HomeScreen({ navigation }: Props) {
               {/* Notification Bell */}
               <TouchableOpacity
                 style={styles.notificationButton}
-                onPress={() => triggerLight()}
+                onPress={() => {
+                  triggerLight();
+                  navigation.navigate('Notifications');
+                }}
               >
                 <Ionicons name="notifications-outline" size={24} color="#fff" />
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationCount}>3</Text>
-                </View>
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationCount}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
           </LinearGradient>

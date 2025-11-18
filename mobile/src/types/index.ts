@@ -44,6 +44,32 @@ export interface Comment {
   is_liked: number;
 }
 
+// Notification types
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'promotion';
+  target_role: 'all' | 'users' | 'admins';
+  priority: number;
+  start_date: string;
+  end_date: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  is_read: boolean;
+}
+
+export interface NotificationState {
+  notifications: Notification[];
+  unreadCount: number;
+  isLoading: boolean;
+  error: string | null;
+  fetchNotifications: () => Promise<void>;
+  markAsRead: (id: number) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+}
+
 // Social types
 export interface UserProfile extends User {
   games?: Game[];
@@ -150,6 +176,7 @@ export type RootStackParamList = {
   Register: undefined;
   MainTabs: undefined;
   GamePlayer: { game: Game };
+  Notifications: undefined;
 };
 
 export type MainTabParamList = {

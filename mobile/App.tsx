@@ -55,6 +55,7 @@ import GamePlayerScreen from './src/screens/GamePlayerScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 
 // Types
 import { RootStackParamList, MainTabParamList } from './src/types';
@@ -249,6 +250,14 @@ export default function App() {
                       presentation: 'fullScreenModal',
                       gestureEnabled: true,
                       gestureDirection: 'vertical',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="Notifications"
+                    component={NotificationsScreen}
+                    options={{
+                      headerShown: false,
+                      ...TransitionPresets.SlideFromRightIOS,
                     }}
                   />
                 </>
