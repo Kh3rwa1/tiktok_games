@@ -55,6 +55,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import OnboardingScreen from './src/screens/onboarding/OnboardingScreen';
 
 // Types
 import { RootStackParamList, MainTabParamList } from './src/types';
@@ -165,7 +166,7 @@ function LoadingScreen() {
  * Kisku - Neo-Brutalism Game Platform
  */
 export default function App() {
-  const { isLoading } = useAuthStore();
+  const { isLoading, hasSeenOnboarding, completeOnboarding } = useAuthStore();
 
   useEffect(() => {
     console.log('Kisku App Initialized');
@@ -177,6 +178,18 @@ export default function App() {
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.container}>
           <LoadingScreen />
+          <StatusBar style="dark" />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    );
+  }
+
+  // Show onboarding for first-time users
+  if (!hasSeenOnboarding) {
+    return (
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={styles.container}>
+          <OnboardingScreen onComplete={completeOnboarding} />
           <StatusBar style="dark" />
         </GestureHandlerRootView>
       </SafeAreaProvider>

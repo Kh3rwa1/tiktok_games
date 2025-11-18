@@ -8,17 +8,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, AuthState } from '../types';
 import api from '../services/api';
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState & {
+  hasSeenOnboarding: boolean;
+  setHasSeenOnboarding: (value: boolean) => void;
+  completeOnboarding: () => Promise<void>;
+}>((set, get) => ({
   user: null,
   token: null,
   isLoading: true,
   error: null,
+  hasSeenOnboarding: false,
 
   setUser: (user: User | null) => set({ user }),
 
   setToken: (token: string | null) => {
     api.setToken(token);
     set({ token });
+  },
+
+  setHasSeenOnboarding: (value: boolean) => set({ hasSeenOnboarding: value }),
+
+  completeOnboarding: async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      set({ hasSeenOnboarding: true });
+    } catch (error) {
+      console.error('Error saving onboarding state:', error);
+    }
   },
 
   signIn: async (email: string, password: string) => {
@@ -154,6 +170,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 // Initialize auth state on app start
 const initializeAuth = async () => {
   try {
+    // Check onboarding status
+    const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
+
     const token = await AsyncStorage.getItem('userToken');
 
     if (token) {
@@ -180,7 +199,8 @@ const initializeAuth = async () => {
         useAuthStore.setState({
           user: appUser,
           token,
-          isLoading: false
+          isLoading: false,
+          hasSeenOnboarding: hasSeenOnboarding === 'true'
         });
       } catch (error) {
         // Token is invalid, clear it
@@ -189,14 +209,16 @@ const initializeAuth = async () => {
         useAuthStore.setState({
           user: null,
           token: null,
-          isLoading: false
+          isLoading: false,
+          hasSeenOnboarding: hasSeenOnboarding === 'true'
         });
       }
     } else {
       useAuthStore.setState({
         user: null,
         token: null,
-        isLoading: false
+        isLoading: false,
+        hasSeenOnboarding: hasSeenOnboarding === 'true'
       });
     }
   } catch (error) {
@@ -204,7 +226,8 @@ const initializeAuth = async () => {
     useAuthStore.setState({
       user: null,
       token: null,
-      isLoading: false
+      isLoading: false,
+      hasSeenOnboarding: false
     });
   }
 };
