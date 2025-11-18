@@ -174,27 +174,39 @@ const initDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-        INDEX idx_active (is_active, start_date, end_date),
-        INDEX idx_type (type)
+        INDEX idx_active (is_active, start_date, end_date)
       )
     `);
 
-    // Create notification_reads table to track which users have read notifications
+    // Create push_notifications table for OneSignal
     await connection.execute(`
-      CREATE TABLE IF NOT EXISTS notification_reads (
+      CREATE TABLE IF NOT EXISTS push_notifications (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        notification_id INT NOT NULL,
-        user_id INT NOT NULL,
-        read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_read (notification_id, user_id),
-        FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        data JSON,
+        segment VARCHAR(100) DEFAULT 'All',
+        onesignal_id VARCHAR(100),
+        status ENUM('pending', 'sent', 'failed') DEFAULT 'pending',
+        sent_at TIMESTAMP NULL,
+        created_by INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
 
     // Insert default app settings if not exist
     await connection.execute(`
       INSERT IGNORE INTO app_settings (setting_key, setting_value, setting_type, description) VALUES
+      ('app_name', 'TikTok Games', 'string', 'Application name displayed to users'),
+      ('app_description', 'Play amazing HTML5 games', 'string', 'Application description'),
+      ('app_version', '1.0.0', 'string', 'Current application version'),
+      ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode'),
+      ('onesignal_app_id', '', 'string', 'OneSignal App ID for push notifications'),
+      ('onesignal_api_key', '', 'string', 'OneSignal REST API Key'),
+      ('max_upload_size', '50', 'number', 'Maximum upload size in MB'),
+      ('allowed_game_formats', '["zip"]', 'json', 'Allowed game upload formats'),
+      ('contact_email', '', 'string', 'Contact email address'),
       ('app_name', 'TikTok Games', 'string', 'Application display name'),
       ('app_description', 'Play amazing HTML5 games', 'string', 'Application description'),
       ('app_version', '1.0.0', 'string', 'Current app version'),
