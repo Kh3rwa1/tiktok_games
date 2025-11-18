@@ -1337,6 +1337,7 @@
       stats: null,
       users: [],
       games: [],
+      quizzes: [],
       notifications: [],
       settings: {},
       loading: false,
@@ -1346,7 +1347,8 @@
       isOnline: navigator.onLine,
       searchQueries: {
         users: '',
-        games: ''
+        games: '',
+        quizzes: ''
       }
     };
 
@@ -1580,6 +1582,9 @@
             <a class="nav-item ${state.currentPage === 'games' ? 'active' : ''}" onclick="navigate('games')">
               <i class="fas fa-gamepad"></i> <span>Games</span>
             </a>
+            <a class="nav-item ${state.currentPage === 'quizzes' ? 'active' : ''}" onclick="navigate('quizzes')">
+              <i class="fas fa-question-circle"></i> <span>Quizzes</span>
+            </a>
             <a class="nav-item ${state.currentPage === 'notifications' ? 'active' : ''}" onclick="navigate('notifications')">
               <i class="fas fa-bell"></i> <span>Notifications</span>
             </a>
@@ -1595,6 +1600,7 @@
               dashboard: 'Dashboard',
               users: 'User Management',
               games: 'Game Management',
+              quizzes: 'Quiz Management',
               notifications: 'Notifications',
               settings: 'Settings'
             }[state.currentPage]}</h1>
@@ -1617,6 +1623,7 @@
         case 'dashboard': return renderDashboard();
         case 'users': return renderUsers();
         case 'games': return renderGames();
+        case 'quizzes': return renderQuizzes();
         case 'notifications': return renderNotifications();
         case 'settings': return renderSettings();
         default: return renderDashboard();
@@ -1768,6 +1775,44 @@
                   </div></td>
                 </tr>
               `).join('') : '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-gamepad"></i><p>No games found</p></div></td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    const renderQuizzes = () => `
+      <div class="card">
+        <div class="card-header">
+          <h3>All Quizzes</h3>
+          <button onclick="showQuizModal()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create Quiz</button>
+        </div>
+        <div class="card-body">
+          <div class="search-bar">
+            <div class="search-input">
+              <input type="text" placeholder="Search quizzes..." id="quizSearch" value="${escapeHtml(state.searchQueries.quizzes || '')}" onkeyup="handleQuizSearch(this.value)" oninput="state.searchQueries.quizzes = this.value">
+              <i class="fas fa-search"></i>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Quiz</th><th>Category</th><th>Questions</th><th>Attempts</th><th>Avg Score</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${state.quizzes && state.quizzes.length ? state.quizzes.map(q => `
+                <tr>
+                  <td><div style="display:flex;align-items:center;gap:12px;"><img src="${escapeHtml(q.thumbnail || '/placeholder.png')}" class="game-thumb" alt="${escapeHtml(q.title)}"><div><strong>${escapeHtml(q.title)}</strong>${q.is_featured ? '<br><span class="badge badge-warning" style="font-size:9px;margin-top:4px;">Featured</span>' : ''}</div></div></td>
+                  <td><span class="badge badge-info">${escapeHtml(q.category || 'general')}</span></td>
+                  <td>${q.stats?.questionCount || 0}</td>
+                  <td>${q.stats?.attempts?.toLocaleString() || 0}</td>
+                  <td>${q.stats?.averageScore ? q.stats.averageScore.toFixed(1) + '%' : '-'}</td>
+                  <td><span class="badge ${q.is_active || q.isActive ? 'badge-success' : 'badge-danger'}">${q.is_active || q.isActive ? 'Active' : 'Inactive'}</span></td>
+                  <td><div class="action-btns">
+                    <button class="action-btn edit" onclick="showEditQuizModal(${q.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn toggle" onclick="toggleQuizActive(${q.id})" title="${q.is_active || q.isActive ? 'Deactivate' : 'Activate'}"><i class="fas fa-power-off"></i></button>
+                    <button class="action-btn toggle" onclick="toggleQuizFeatured(${q.id})" title="${q.is_featured || q.isFeatured ? 'Unfeature' : 'Feature'}"><i class="fas fa-star"></i></button>
+                    <button class="action-btn delete" onclick="confirmDeleteQuiz(${q.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                  </div></td>
+                </tr>
+              `).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-question-circle"></i><p>No quizzes found</p></div></td></tr>'}
             </tbody>
           </table>
         </div>
@@ -1942,6 +1987,7 @@
           case 'dashboard': await loadStats(); break;
           case 'users': await loadUsers(); break;
           case 'games': await loadGames(); break;
+          case 'quizzes': await loadQuizzes(); break;
           case 'notifications': await loadNotifications(); break;
           case 'settings': await loadSettings(); break;
         }
@@ -2072,6 +2118,248 @@
       state.searchQueries.games = value;
       loadGames();
     }, 500);
+
+    // ==================== QUIZ ACTIONS ====================
+    const loadQuizzes = async () => {
+      try {
+        const data = await api('/admin/quizzes');
+        state.quizzes = data.data || [];
+      } catch (error) {
+        console.error('Error loading quizzes:', error);
+        showToast('Error loading quizzes', 'error');
+      }
+    };
+
+    const toggleQuizFeatured = async (id) => {
+      try {
+        await api(`/admin/quizzes/${id}/toggle-featured`, { method: 'PUT' });
+        showToast('Featured status updated', 'success');
+        loadQuizzes();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const toggleQuizActive = async (id) => {
+      try {
+        await api(`/admin/quizzes/${id}/toggle-active`, { method: 'PUT' });
+        showToast('Quiz status updated', 'success');
+        loadQuizzes();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const confirmDeleteQuiz = (id) => {
+      const quiz = state.quizzes.find(q => q.id === id);
+      const title = quiz ? quiz.title : 'Unknown';
+      showConfirm(`Delete quiz "${escapeHtml(title)}"? This action cannot be undone.`, async () => {
+        try {
+          await api(`/admin/quizzes/${id}`, { method: 'DELETE' });
+          showToast('Quiz deleted', 'success');
+          loadQuizzes();
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      });
+    };
+
+    const handleQuizSearch = debounce((value) => {
+      state.searchQueries.quizzes = value;
+      loadQuizzes();
+    }, 500);
+
+    const showQuizModal = () => {
+      const content = `
+        <form id="quizForm" onsubmit="createQuiz(event)">
+          <div class="form-group"><label>Quiz Title *</label><input type="text" id="quizTitle" required placeholder="Enter quiz title"></div>
+          <div class="form-group"><label>Description *</label><textarea id="quizDescription" required placeholder="Quiz description" rows="3"></textarea></div>
+          <div class="form-group"><label>Category</label><select id="quizCategory"><option value="general" selected>General</option><option value="trivia">Trivia</option><option value="education">Education</option><option value="entertainment">Entertainment</option><option value="sports">Sports</option><option value="science">Science</option><option value="history">History</option><option value="geography">Geography</option></select></div>
+          <div class="form-group"><label>Difficulty</label><select id="quizDifficulty"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></div>
+          <div class="form-group"><label>Time Limit (seconds, 0 = no limit)</label><input type="number" id="quizTimeLimit" value="0" min="0"></div>
+          <div class="form-group"><label>Passing Score (%)</label><input type="number" id="quizPassingScore" value="60" min="0" max="100"></div>
+          <div class="form-group"><label>Instructions</label><textarea id="quizInstructions" placeholder="Instructions for quiz takers" rows="2"></textarea></div>
+          <div class="form-group"><label>Tags (comma separated)</label><input type="text" id="quizTags" placeholder="fun, educational, challenging"></div>
+          <div class="form-group"><label>Thumbnail Image</label><div class="file-upload-area" onclick="document.getElementById('quizThumbnail').click()"><i class="fas fa-image"></i><p id="quizThumbnailFileName">Click to select thumbnail</p></div><input type="file" id="quizThumbnail" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'quizThumbnailFileName')"></div>
+          <div class="form-group">
+            <label>Questions *</label>
+            <div id="questionsContainer" style="margin-top: 10px;"></div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addQuestion()" style="margin-top: 10px;"><i class="fas fa-plus"></i> Add Question</button>
+          </div>
+        </form>
+      `;
+      const footer = `<button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="document.getElementById('quizForm').requestSubmit()"><i class="fas fa-save"></i> Create Quiz</button>`;
+      showModal('Create New Quiz', content, footer);
+      setTimeout(() => addQuestion(), 100);
+    };
+
+    let questionCounter = 0;
+
+    const addQuestion = () => {
+      questionCounter++;
+      const container = document.getElementById('questionsContainer');
+      const questionDiv = document.createElement('div');
+      questionDiv.className = 'question-card';
+      questionDiv.style = 'border: 2px solid var(--border); padding: 15px; margin-bottom: 15px; border-radius: 8px; background: var(--card-bg);';
+      questionDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <strong>Question ${questionCounter}</strong>
+          <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.question-card').remove()"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="form-group"><label>Question Text</label><input type="text" class="question-text" required placeholder="Enter your question"></div>
+        <div class="form-group"><label>Question Type</label><select class="question-type" onchange="handleQuestionTypeChange(this)"><option value="multiple_choice">Multiple Choice</option><option value="true_false">True/False</option></select></div>
+        <div class="form-group"><label>Points</label><input type="number" class="question-points" value="1" min="1"></div>
+        <div class="form-group"><label>Explanation (optional)</label><input type="text" class="question-explanation" placeholder="Explain the correct answer"></div>
+        <div class="form-group">
+          <label>Answers</label>
+          <div class="answers-container" data-question="${questionCounter}"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addAnswer(${questionCounter})" style="margin-top: 5px;"><i class="fas fa-plus"></i> Add Answer</button>
+        </div>
+      `;
+      container.appendChild(questionDiv);
+      addAnswer(questionCounter);
+      addAnswer(questionCounter);
+    };
+
+    const handleQuestionTypeChange = (select) => {
+      const questionCard = select.closest('.question-card');
+      const answersContainer = questionCard.querySelector('.answers-container');
+      const questionNum = answersContainer.dataset.question;
+
+      if (select.value === 'true_false') {
+        answersContainer.innerHTML = '';
+        addAnswer(questionNum, 'True');
+        addAnswer(questionNum, 'False');
+        questionCard.querySelector('[onclick*="addAnswer"]').style.display = 'none';
+      } else {
+        answersContainer.innerHTML = '';
+        addAnswer(questionNum);
+        addAnswer(questionNum);
+        questionCard.querySelector('[onclick*="addAnswer"]').style.display = 'block';
+      }
+    };
+
+    const addAnswer = (questionNum, defaultText = '') => {
+      const container = document.querySelector(`.answers-container[data-question="${questionNum}"]`);
+      const answerDiv = document.createElement('div');
+      answerDiv.style = 'display: flex; gap: 10px; align-items: center; margin-bottom: 8px;';
+      answerDiv.innerHTML = `
+        <input type="text" class="answer-text" placeholder="Answer text" value="${defaultText}" required style="flex: 1;">
+        <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap;"><input type="checkbox" class="answer-correct"> Correct</label>
+        ${!defaultText ? `<button type="button" class="btn btn-danger btn-sm" onclick="this.closest('div').remove()" style="padding: 4px 8px;"><i class="fas fa-times"></i></button>` : ''}
+      `;
+      container.appendChild(answerDiv);
+    };
+
+    const createQuiz = async (e) => {
+      e.preventDefault();
+
+      const questions = [];
+      document.querySelectorAll('.question-card').forEach((card, index) => {
+        const questionText = card.querySelector('.question-text').value;
+        const questionType = card.querySelector('.question-type').value;
+        const points = parseInt(card.querySelector('.question-points').value);
+        const explanation = card.querySelector('.question-explanation').value;
+
+        const answers = [];
+        card.querySelectorAll('.answers-container > div').forEach(answerDiv => {
+          const answerText = answerDiv.querySelector('.answer-text').value;
+          const isCorrect = answerDiv.querySelector('.answer-correct').checked;
+          answers.push({ answerText, isCorrect });
+        });
+
+        if (questionText && answers.length >= 2) {
+          questions.push({
+            questionText,
+            questionType,
+            points,
+            explanation,
+            orderIndex: index,
+            answers
+          });
+        }
+      });
+
+      if (questions.length === 0) {
+        showToast('Please add at least one question', 'error');
+        return;
+      }
+
+      const hasCorrectAnswers = questions.every(q => q.answers.some(a => a.isCorrect));
+      if (!hasCorrectAnswers) {
+        showToast('Each question must have at least one correct answer', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('title', document.getElementById('quizTitle').value);
+      formData.append('description', document.getElementById('quizDescription').value);
+      formData.append('category', document.getElementById('quizCategory').value);
+      formData.append('difficulty', document.getElementById('quizDifficulty').value);
+      formData.append('timeLimit', document.getElementById('quizTimeLimit').value);
+      formData.append('passingScore', document.getElementById('quizPassingScore').value);
+      formData.append('instructions', document.getElementById('quizInstructions').value);
+      formData.append('tags', document.getElementById('quizTags').value);
+      formData.append('questions', JSON.stringify(questions));
+
+      const thumbnailFile = document.getElementById('quizThumbnail').files[0];
+      if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
+
+      try {
+        await api('/admin/quizzes', { method: 'POST', body: formData });
+        showToast('Quiz created successfully!', 'success');
+        closeModal();
+        loadQuizzes();
+        questionCounter = 0;
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const showEditQuizModal = async (id) => {
+      try {
+        const data = await api(`/admin/quizzes/${id}`);
+        const quiz = data.data;
+
+        const content = `
+          <form id="editQuizForm" onsubmit="updateQuiz(event, ${id})">
+            <div class="form-group"><label>Quiz Title *</label><input type="text" id="editQuizTitle" required value="${escapeHtml(quiz.title)}"></div>
+            <div class="form-group"><label>Description *</label><textarea id="editQuizDescription" required rows="3">${escapeHtml(quiz.description)}</textarea></div>
+            <div class="form-group"><label>Category</label><select id="editQuizCategory"><option value="general" ${quiz.category === 'general' ? 'selected' : ''}>General</option><option value="trivia" ${quiz.category === 'trivia' ? 'selected' : ''}>Trivia</option><option value="education" ${quiz.category === 'education' ? 'selected' : ''}>Education</option><option value="entertainment" ${quiz.category === 'entertainment' ? 'selected' : ''}>Entertainment</option><option value="sports" ${quiz.category === 'sports' ? 'selected' : ''}>Sports</option><option value="science" ${quiz.category === 'science' ? 'selected' : ''}>Science</option><option value="history" ${quiz.category === 'history' ? 'selected' : ''}>History</option><option value="geography" ${quiz.category === 'geography' ? 'selected' : ''}>Geography</option></select></div>
+            <div class="form-group"><label>Difficulty</label><select id="editQuizDifficulty"><option value="easy" ${quiz.difficulty === 'easy' ? 'selected' : ''}>Easy</option><option value="medium" ${quiz.difficulty === 'medium' ? 'selected' : ''}>Medium</option><option value="hard" ${quiz.difficulty === 'hard' ? 'selected' : ''}>Hard</option></select></div>
+            <div class="form-group"><label>Time Limit (seconds, 0 = no limit)</label><input type="number" id="editQuizTimeLimit" value="${quiz.timeLimit || 0}" min="0"></div>
+            <div class="form-group"><label>Passing Score (%)</label><input type="number" id="editQuizPassingScore" value="${quiz.passingScore || 60}" min="0" max="100"></div>
+            <div class="form-group"><label>Instructions</label><textarea id="editQuizInstructions" rows="2">${escapeHtml(quiz.instructions || '')}</textarea></div>
+            <p style="margin-top: 15px;"><small>To edit questions, please delete and recreate the quiz</small></p>
+          </form>
+        `;
+        const footer = `<button class="btn btn-secondary btn-sm" onclick="closeModal()">Cancel</button><button class="btn btn-primary btn-sm" onclick="document.getElementById('editQuizForm').requestSubmit()"><i class="fas fa-save"></i> Update</button>`;
+        showModal('Edit Quiz', content, footer);
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
+    const updateQuiz = async (e, id) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('title', document.getElementById('editQuizTitle').value);
+      formData.append('description', document.getElementById('editQuizDescription').value);
+      formData.append('category', document.getElementById('editQuizCategory').value);
+      formData.append('difficulty', document.getElementById('editQuizDifficulty').value);
+      formData.append('timeLimit', document.getElementById('editQuizTimeLimit').value);
+      formData.append('passingScore', document.getElementById('editQuizPassingScore').value);
+      formData.append('instructions', document.getElementById('editQuizInstructions').value);
+
+      try {
+        await api(`/admin/quizzes/${id}`, { method: 'PUT', body: formData });
+        showToast('Quiz updated successfully!', 'success');
+        closeModal();
+        loadQuizzes();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
 
     // ==================== NOTIFICATION ACTIONS ====================
     const confirmDeleteNotification = (id) => { showConfirm('Delete this notification?', async () => { try { await api(`/admin/notifications/${id}`, { method: 'DELETE' }); showToast('Notification deleted', 'success'); loadNotifications(); } catch (error) { showToast(error.message, 'error'); } }); };

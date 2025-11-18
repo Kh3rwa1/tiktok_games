@@ -184,6 +184,7 @@ app.use('/api/auth/register', authLimiter);
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/games', require('./routes/games'));
+app.use('/api/quizzes', require('./routes/quizzes'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/social', require('./routes/social'));
 app.use('/api/sync', require('./routes/sync'));

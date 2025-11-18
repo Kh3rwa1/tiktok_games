@@ -1408,4 +1408,279 @@ router.get('/database-info', protect, adminOnly, async (req, res) => {
   }
 });
 
+// ==========================================
+// QUIZ MANAGEMENT
+// ==========================================
+
+const Quiz = require('../models/mysql/Quiz');
+
+// Get all quizzes (admin view)
+router.get('/quizzes', protect, adminOnly, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '', category = '' } = req.query;
+
+    const result = await Quiz.findAll({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      isActive: undefined, // Show all quizzes including inactive
+      search,
+      category: category || undefined
+    });
+
+    res.json({
+      success: true,
+      data: result.quizzes,
+      pagination: result.pagination
+    });
+  } catch (error) {
+    console.error('Error fetching quizzes:', error);
+    res.status(500).json({ success: false, error: 'Error fetching quizzes' });
+  }
+});
+
+// Get single quiz details
+router.get('/quizzes/:id', protect, adminOnly, async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+    res.json({ success: true, data: quiz });
+  } catch (error) {
+    console.error('Error fetching quiz:', error);
+    res.status(500).json({ success: false, error: 'Error fetching quiz' });
+  }
+});
+
+// Create new quiz
+router.post('/quizzes', protect, adminOnly, upload.single('thumbnail'), validateUploadedFiles, async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      category,
+      difficulty,
+      tags,
+      timeLimit,
+      passingScore,
+      instructions,
+      questions
+    } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({ message: 'Title and description are required' });
+    }
+
+    // Parse questions if it's a JSON string
+    let parsedQuestions = questions;
+    if (typeof questions === 'string') {
+      try {
+        parsedQuestions = JSON.parse(questions);
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid questions format' });
+      }
+    }
+
+    if (!parsedQuestions || parsedQuestions.length === 0) {
+      return res.status(400).json({ message: 'At least one question is required' });
+    }
+
+    let thumbnailUrl = '';
+
+    // Handle thumbnail upload
+    if (req.file) {
+      const thumbDir = path.join(__dirname, '..', 'public', 'thumbnails');
+      await fs.mkdir(thumbDir, { recursive: true });
+
+      const thumbName = `quiz-${Date.now()}-${req.file.originalname}`;
+      const thumbPath = path.join(thumbDir, thumbName);
+
+      await fs.rename(req.file.path, thumbPath);
+      thumbnailUrl = `/thumbnails/${thumbName}`;
+    }
+
+    // Parse tags if it's a string
+    let parsedTags = tags;
+    if (typeof tags === 'string') {
+      try {
+        parsedTags = JSON.parse(tags);
+      } catch (e) {
+        parsedTags = tags.split(',').map(t => t.trim());
+      }
+    }
+
+    const quiz = await Quiz.create({
+      title,
+      description,
+      thumbnail: thumbnailUrl,
+      category: category || 'general',
+      tags: parsedTags || [],
+      difficulty: difficulty || 'medium',
+      timeLimit: timeLimit ? parseInt(timeLimit) : 0,
+      passingScore: passingScore ? parseInt(passingScore) : 60,
+      instructions,
+      questions: parsedQuestions,
+      creatorId: req.user.id
+    });
+
+    res.status(201).json({ success: true, data: quiz });
+  } catch (error) {
+    console.error('Error creating quiz:', error);
+    res.status(500).json({ message: 'Error creating quiz: ' + error.message });
+  }
+});
+
+// Update quiz
+router.put('/quizzes/:id', protect, adminOnly, upload.single('thumbnail'), validateUploadedFiles, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      description,
+      category,
+      difficulty,
+      tags,
+      timeLimit,
+      passingScore,
+      instructions,
+      questions,
+      isActive,
+      isFeatured
+    } = req.body;
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (category !== undefined) updateData.category = category;
+    if (difficulty !== undefined) updateData.difficulty = difficulty;
+    if (timeLimit !== undefined) updateData.timeLimit = parseInt(timeLimit);
+    if (passingScore !== undefined) updateData.passingScore = parseInt(passingScore);
+    if (instructions !== undefined) updateData.instructions = instructions;
+    if (isActive !== undefined) updateData.isActive = isActive === 'true' || isActive === true;
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured === 'true' || isFeatured === true;
+
+    // Parse tags if provided
+    if (tags !== undefined) {
+      if (typeof tags === 'string') {
+        try {
+          updateData.tags = JSON.parse(tags);
+        } catch (e) {
+          updateData.tags = tags.split(',').map(t => t.trim());
+        }
+      } else {
+        updateData.tags = tags;
+      }
+    }
+
+    // Parse questions if provided
+    if (questions !== undefined) {
+      if (typeof questions === 'string') {
+        try {
+          updateData.questions = JSON.parse(questions);
+        } catch (e) {
+          return res.status(400).json({ message: 'Invalid questions format' });
+        }
+      } else {
+        updateData.questions = questions;
+      }
+    }
+
+    // Handle thumbnail upload
+    if (req.file) {
+      const thumbDir = path.join(__dirname, '..', 'public', 'thumbnails');
+      await fs.mkdir(thumbDir, { recursive: true });
+
+      const thumbName = `quiz-${Date.now()}-${req.file.originalname}`;
+      const thumbPath = path.join(thumbDir, thumbName);
+
+      await fs.rename(req.file.path, thumbPath);
+      updateData.thumbnail = `/thumbnails/${thumbName}`;
+    }
+
+    const quiz = await Quiz.update(id, updateData);
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    res.json({ success: true, data: quiz });
+  } catch (error) {
+    console.error('Error updating quiz:', error);
+    res.status(500).json({ message: 'Error updating quiz: ' + error.message });
+  }
+});
+
+// Delete quiz
+router.delete('/quizzes/:id', protect, adminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Quiz.hardDelete(id); // Use hard delete for admin
+
+    res.json({ success: true, message: 'Quiz deleted permanently' });
+  } catch (error) {
+    console.error('Error deleting quiz:', error);
+    res.status(500).json({ success: false, error: 'Error deleting quiz' });
+  }
+});
+
+// Toggle quiz featured status
+router.put('/quizzes/:id/toggle-featured', protect, adminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const quiz = await Quiz.findById(id);
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    const updated = await Quiz.update(id, { isFeatured: !quiz.isFeatured });
+
+    res.json({
+      success: true,
+      data: updated,
+      message: `Quiz ${updated.isFeatured ? 'featured' : 'unfeatured'} successfully`
+    });
+  } catch (error) {
+    console.error('Error toggling quiz featured:', error);
+    res.status(500).json({ success: false, error: 'Error toggling featured status' });
+  }
+});
+
+// Toggle quiz active status
+router.put('/quizzes/:id/toggle-active', protect, adminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const quiz = await Quiz.findById(id);
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    const updated = await Quiz.update(id, { isActive: !quiz.isActive });
+
+    res.json({
+      success: true,
+      data: updated,
+      message: `Quiz ${updated.isActive ? 'activated' : 'deactivated'} successfully`
+    });
+  } catch (error) {
+    console.error('Error toggling quiz active:', error);
+    res.status(500).json({ success: false, error: 'Error toggling active status' });
+  }
+});
+
+// Get quiz statistics
+router.get('/quizzes/stats/overview', protect, adminOnly, async (req, res) => {
+  try {
+    const stats = await Quiz.getStats();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error getting quiz stats:', error);
+    res.status(500).json({ success: false, error: 'Error getting quiz statistics' });
+  }
+});
+
 module.exports = router;
