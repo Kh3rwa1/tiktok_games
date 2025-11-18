@@ -17,6 +17,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -53,7 +54,8 @@ import { PremiumGameCard, LoadingSkeleton } from '../components';
 import { triggerHeavy, triggerMedium, triggerLight, triggerSelection, triggerSuccess } from '../utils/haptics';
 
 const { width, height } = Dimensions.get('window');
-const ITEM_HEIGHT = height - 90; // Subtract tab bar height
+// Dynamic tab bar height based on platform
+const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 80 : 60;
 const STATUS_BAR_HEIGHT = StatusBar.currentHeight || 44;
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
@@ -156,6 +158,10 @@ export default function HomeScreen({ navigation }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
+
+  // Calculate ITEM_HEIGHT dynamically based on safe area
+  const ITEM_HEIGHT = height - TAB_BAR_HEIGHT - insets.bottom;
 
   // Use feed instead of games for TikTok-style experience
   const games = feed;
@@ -522,7 +528,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerGradient: {
-    paddingTop: STATUS_BAR_HEIGHT + 10,
+    paddingTop: Platform.OS === 'ios' ? 50 : STATUS_BAR_HEIGHT + 10,
     paddingBottom: 16,
   },
   headerContent: {

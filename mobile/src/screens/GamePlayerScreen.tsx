@@ -97,7 +97,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
     const startTime = Date.now();
     setPlayStartTime(startTime);
 
-    // Set loading timeout (15 seconds max)
+    // Set loading timeout (10 seconds max - reduced from 15 for better UX)
     loadingTimeout.current = setTimeout(() => {
       if (isLoading) {
         setIsLoading(false);
@@ -110,7 +110,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
           visibilityTime: 4000,
         });
       }
-    }, 15000);
+    }, 10000);
 
     return () => {
       // Clean up timeouts
@@ -357,8 +357,8 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
           allowsBackForwardNavigationGestures={false}
           bounces={false}
           scrollEnabled={false}
-          // Scale to fit viewport properly
-          scalesPageToFit={Platform.OS === 'android'}
+          // Scale to fit viewport properly on both platforms
+          scalesPageToFit={true}
           // Android specific settings
           mixedContentMode="compatibility"
           overScrollMode="never"

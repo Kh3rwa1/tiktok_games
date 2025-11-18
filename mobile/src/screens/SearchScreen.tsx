@@ -49,6 +49,7 @@ export default function SearchScreen() {
   const [selectedCategory, setSelectedCategory] = useState<GameCategory | 'all'>('all');
   const [hasSearched, setHasSearched] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchRequestId = useRef<number>(0);
 
   const handleSearch = useCallback(async () => {
     haptics.light();
@@ -59,6 +60,9 @@ export default function SearchScreen() {
     }
 
     setHasSearched(true);
+
+    // Increment request ID to track this specific request
+    const currentRequestId = ++searchRequestId.current;
 
     const params: any = {
       page: 1,
@@ -74,6 +78,11 @@ export default function SearchScreen() {
     }
 
     await fetchGames(params);
+
+    // Only update if this is still the latest request
+    if (currentRequestId !== searchRequestId.current) {
+      return; // Stale request, ignore results
+    }
   }, [searchQuery, selectedCategory, fetchGames]);
 
   // Debounced search
@@ -274,6 +283,8 @@ export default function SearchScreen() {
               ListEmptyComponent={renderEmptyState}
               showsVerticalScrollIndicator={false}
               columnWrapperStyle={styles.columnWrapper}
+              onScrollBeginDrag={Keyboard.dismiss}
+              keyboardShouldPersistTaps="handled"
             />
           )}
         </>

@@ -50,6 +50,9 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
   style,
   fullScreen = false,
 }) => {
+  // State for image error handling
+  const [imageError, setImageError] = React.useState(false);
+
   // Animation values
   const scale = useSharedValue(1);
   const heartScale = useSharedValue(1);
@@ -154,15 +157,22 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
       <View style={styles.card}>
         {/* Image Container with Gradient Overlay */}
         <View style={styles.imageContainer}>
-          <AnimatedFastImage
-            source={{
-              uri: game.thumbnail,
-              priority: FastImage.priority.high,
-              cache: FastImage.cacheControl.immutable,
-            }}
-            style={[styles.image, imageAnimatedStyle]}
-            resizeMode={FastImage.resizeMode.cover}
-          />
+          {!imageError ? (
+            <AnimatedFastImage
+              source={{
+                uri: game.thumbnail,
+                priority: FastImage.priority.high,
+                cache: FastImage.cacheControl.immutable,
+              }}
+              style={[styles.image, imageAnimatedStyle]}
+              resizeMode={FastImage.resizeMode.cover}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <View style={[styles.image, styles.imagePlaceholder]}>
+              <Ionicons name="game-controller-outline" size={48} color="#444" />
+            </View>
+          )}
 
           {/* Gradient Overlay */}
           <LinearGradient
@@ -198,7 +208,7 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
           <View style={styles.infoContent}>
             {/* Title and Creator */}
             <View style={styles.titleContainer}>
-              <Text style={styles.title} numberOfLines={1}>
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
                 {game.title}
               </Text>
               {game.creator && (
@@ -304,6 +314,11 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  imagePlaceholder: {
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gradientOverlay: {
     position: 'absolute',

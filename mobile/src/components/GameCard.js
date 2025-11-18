@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function GameCard({ game, onPlay, onLike }) {
+  const [avatarError, setAvatarError] = useState(false);
+
   const formatNumber = (num) => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
@@ -44,10 +46,17 @@ export default function GameCard({ game, onPlay, onLike }) {
           </Text>
 
           <View style={styles.creatorContainer}>
-            <Image
-              source={{ uri: game.creator?.avatar }}
-              style={styles.avatar}
-            />
+            {game.creator?.avatar && !avatarError ? (
+              <Image
+                source={{ uri: game.creator?.avatar }}
+                style={styles.avatar}
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Ionicons name="person" size={16} color="#FF0050" />
+              </View>
+            )}
             <Text style={styles.creatorName}>@{game.creator?.username}</Text>
           </View>
 
@@ -65,6 +74,7 @@ export default function GameCard({ game, onPlay, onLike }) {
           <TouchableOpacity
             style={styles.playButton}
             onPress={() => onPlay(game)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="play" size={24} color="#fff" />
             <Text style={styles.playButtonText}>Play Now</Text>
@@ -160,6 +170,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FF0050',
   },
+  avatarFallback: {
+    backgroundColor: 'rgba(255, 0, 80, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   creatorName: {
     color: '#fff',
     fontSize: 14,
@@ -217,6 +232,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 30,
     alignSelf: 'flex-start',
+    minHeight: 48,
+    minWidth: 120,
   },
   playButtonText: {
     color: '#fff',

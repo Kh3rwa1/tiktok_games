@@ -131,9 +131,8 @@ export const triggerHaptic = async (type: HapticFeedbackType): Promise<void> => 
 export const triggerDoubleTap = async (): Promise<void> => {
   try {
     await triggerLight();
-    setTimeout(async () => {
-      await triggerMedium();
-    }, 100);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    await triggerMedium();
   } catch (error) {
     console.warn('Haptic feedback not available:', error);
   }
@@ -146,9 +145,8 @@ export const triggerDoubleTap = async (): Promise<void> => {
 export const triggerSuccessPattern = async (): Promise<void> => {
   try {
     await triggerLight();
-    setTimeout(async () => {
-      await triggerSuccess();
-    }, 50);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    await triggerSuccess();
   } catch (error) {
     console.warn('Haptic feedback not available:', error);
   }

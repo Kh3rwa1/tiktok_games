@@ -64,6 +64,7 @@ export default function ProfileScreen({ navigation }: Props) {
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Animation values
   const headerScale = useSharedValue(0);
@@ -240,8 +241,12 @@ export default function ProfileScreen({ navigation }: Props) {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              {user.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.avatar} />
+              {user.avatar && !avatarError ? (
+                <Image
+                  source={{ uri: user.avatar }}
+                  style={styles.avatar}
+                  onError={() => setAvatarError(true)}
+                />
               ) : (
                 <Ionicons name="person" size={60} color="#fff" />
               )}
@@ -398,8 +403,9 @@ export default function ProfileScreen({ navigation }: Props) {
         onRequestClose={() => setShowEditModal(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
           style={styles.modalOverlay}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <Animated.View
             style={styles.modalContent}
