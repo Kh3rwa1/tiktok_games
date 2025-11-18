@@ -36,7 +36,7 @@ class UserModel {
   async findById(id) {
     const [rows] = await pool.execute(
       `SELECT id, username, email, avatar, bio, total_games_played, total_play_time,
-              is_active, role, created_at, updated_at
+              is_active, role, password_changed_at, locked_until, created_at, updated_at
        FROM users WHERE id = ?`,
       [id]
     );
@@ -116,7 +116,7 @@ class UserModel {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     await pool.execute(
-      `UPDATE users SET password = ? WHERE id = ?`,
+      `UPDATE users SET password = ?, password_changed_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [hashedPassword, id]
     );
 
@@ -231,6 +231,8 @@ class UserModel {
       },
       isActive: user.is_active,
       role: user.role,
+      passwordChangedAt: user.password_changed_at,
+      lockedUntil: user.locked_until,
       createdAt: user.created_at,
       updatedAt: user.updated_at
     };

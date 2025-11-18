@@ -211,7 +211,9 @@ router.post('/settings', protect, adminOnly, async (req, res) => {
 // Get all users
 router.get('/users', protect, adminOnly, async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = '' } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const search = req.query.search || '';
     const offset = (page - 1) * limit;
 
     let query = `SELECT id, username, email, avatar, role, is_active, total_games_played, created_at FROM users`;
@@ -226,15 +228,15 @@ router.get('/users', protect, adminOnly, async (req, res) => {
 
     query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
-    const [users] = await pool.execute(query, [...values, parseInt(limit), offset]);
+    const [users] = await pool.execute(query, [...values, limit, offset]);
     const [countResult] = await pool.execute(countQuery, values);
 
     res.json({
       success: true,
       data: users,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total: countResult[0].total,
         pages: Math.ceil(countResult[0].total / limit)
       }
@@ -430,6 +432,16 @@ router.post('/games', protect, adminOnly, upload.fields([
       thumbnailUrl = `/thumbnails/${thumbName}`;
     }
 
+    // Parse tags safely
+    let parsedTags = [];
+    if (tags) {
+      try {
+        parsedTags = JSON.parse(tags);
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid tags format. Must be a valid JSON array.' });
+      }
+    }
+
     // Create game in database
     const game = await Game.create({
       title,
@@ -437,7 +449,7 @@ router.post('/games', protect, adminOnly, upload.fields([
       thumbnail: thumbnailUrl || 'https://via.placeholder.com/300x200',
       gameUrl: gameUrl || req.body.gameUrl || '',
       category: category || 'casual',
-      tags: tags ? JSON.parse(tags) : [],
+      tags: parsedTags,
       difficulty: difficulty || 'medium',
       creatorId: req.user.id,
       fileSize,
@@ -463,7 +475,11 @@ router.put('/games/:id', protect, adminOnly, upload.fields([
 
     // Parse tags if provided as string
     if (updateData.tags && typeof updateData.tags === 'string') {
-      updateData.tags = JSON.parse(updateData.tags);
+      try {
+        updateData.tags = JSON.parse(updateData.tags);
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid tags format. Must be a valid JSON array.' });
+      }
     }
 
     // Handle game file upload
@@ -650,7 +666,8 @@ router.get('/games/:id/files', protect, adminOnly, async (req, res) => {
 // Get all in-app notifications
 router.get('/notifications', protect, adminOnly, async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const offset = (page - 1) * limit;
 
     const [notifications] = await pool.execute(
@@ -659,7 +676,7 @@ router.get('/notifications', protect, adminOnly, async (req, res) => {
        LEFT JOIN users u ON n.created_by = u.id
        ORDER BY n.created_at DESC
        LIMIT ? OFFSET ?`,
-      [parseInt(limit), offset]
+      [limit, offset]
     );
 
     const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM notifications');
@@ -668,8 +685,8 @@ router.get('/notifications', protect, adminOnly, async (req, res) => {
       success: true,
       data: notifications,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total: countResult[0].total,
         pages: Math.ceil(countResult[0].total / limit)
       }
@@ -769,7 +786,8 @@ router.get('/notifications/active', async (req, res) => {
 // Get push notification history
 router.get('/push-notifications', protect, adminOnly, async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const offset = (page - 1) * limit;
 
     const [notifications] = await pool.execute(
@@ -778,7 +796,7 @@ router.get('/push-notifications', protect, adminOnly, async (req, res) => {
        LEFT JOIN users u ON pn.created_by = u.id
        ORDER BY pn.created_at DESC
        LIMIT ? OFFSET ?`,
-      [parseInt(limit), offset]
+      [limit, offset]
     );
 
     const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM push_notifications');
@@ -787,8 +805,8 @@ router.get('/push-notifications', protect, adminOnly, async (req, res) => {
       success: true,
       data: notifications,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total: countResult[0].total,
         pages: Math.ceil(countResult[0].total / limit)
       }
@@ -1056,7 +1074,10 @@ router.get('/system-info', protect, adminOnly, async (req, res) => {
 // Get audit log
 router.get('/audit-log', protect, adminOnly, async (req, res) => {
   try {
-    const { page = 1, limit = 50, action = '', userId = '' } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+    const action = req.query.action || '';
+    const userId = req.query.userId || '';
     const offset = (page - 1) * limit;
 
     let query = `
@@ -1082,18 +1103,23 @@ router.get('/audit-log', protect, adminOnly, async (req, res) => {
 
     query += ` ORDER BY al.created_at DESC LIMIT ? OFFSET ?`;
 
-    const [logs] = await pool.execute(query, [...values, parseInt(limit), offset]);
+    const [logs] = await pool.execute(query, [...values, limit, offset]);
     const [countResult] = await pool.execute(countQuery, values);
 
     res.json({
       success: true,
-      data: logs.map(log => ({
-        ...log,
-        details: log.details ? JSON.parse(log.details) : null
-      })),
+      data: logs.map(log => {
+        let details = null;
+        try {
+          details = log.details ? JSON.parse(log.details) : null;
+        } catch (e) {
+          details = log.details;
+        }
+        return { ...log, details };
+      }),
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page,
+        limit,
         total: countResult[0].total,
         pages: Math.ceil(countResult[0].total / limit)
       }

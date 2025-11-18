@@ -28,7 +28,7 @@ class Notification {
       [title, message, type, target_audience, priority, start_date, end_date, action_url, image_url, created_by]
     );
 
-    return this.findById(result.insertId);
+    return Notification.findById(result.insertId);
   }
 
   // Find notification by ID
@@ -212,7 +212,7 @@ class Notification {
     }
 
     try {
-      const fetch = (await import('node-fetch')).default;
+      const fetch = require('node-fetch');
 
       const response = await fetch('https://onesignal.com/api/v1/notifications', {
         method: 'POST',

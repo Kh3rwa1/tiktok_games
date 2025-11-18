@@ -1,6 +1,8 @@
 const User = require('../models/mysql/User');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
+const { handleFailedLogin, resetLoginAttempts } = require('../middleware/auth');
+const { pool } = require('../config/database');
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -84,10 +86,31 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check if account is locked
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      const lockedUntil = new Date(user.locked_until);
+      return res.status(423).json({
+        message: 'Account is temporarily locked due to too many failed login attempts',
+        lockedUntil: lockedUntil.toISOString(),
+        code: 'ACCOUNT_LOCKED'
+      });
+    }
+
     // Check password
     const isMatch = await User.comparePassword(password, user.password);
 
     if (!isMatch) {
+      // Handle failed login attempt
+      const lockoutResult = await handleFailedLogin(user.id);
+
+      if (lockoutResult.locked) {
+        return res.status(423).json({
+          message: `Account locked for ${lockoutResult.lockDuration} minutes due to too many failed attempts`,
+          lockedUntil: lockoutResult.lockedUntil.toISOString(),
+          code: 'ACCOUNT_LOCKED'
+        });
+      }
+
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -95,6 +118,9 @@ const login = async (req, res) => {
     if (!user.is_active) {
       return res.status(401).json({ message: 'Account is inactive' });
     }
+
+    // Reset login attempts on successful login
+    await resetLoginAttempts(user.id);
 
     // Generate token
     const token = generateToken(user.id);
