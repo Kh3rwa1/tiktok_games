@@ -185,6 +185,7 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/games', require('./routes/games'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/social', require('./routes/social'));
 
 // Serve static files (admin panel and game assets)
 app.use(express.static(path.join(__dirname, 'public'), {

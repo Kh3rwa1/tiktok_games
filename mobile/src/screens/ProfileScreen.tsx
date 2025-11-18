@@ -257,7 +257,22 @@ export default function ProfileScreen({ navigation }: Props) {
 
           <Text style={styles.username}>@{user.username}</Text>
           {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
-          <Text style={styles.email}>{user.email}</Text>
+
+          {/* TikTok-style Followers/Following Stats */}
+          <View style={styles.socialStats}>
+            <TouchableOpacity style={styles.socialStatItem}>
+              <Text style={styles.socialStatValue}>{user.following_count || 0}</Text>
+              <Text style={styles.socialStatLabel}>Following</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialStatItem}>
+              <Text style={styles.socialStatValue}>{user.followers_count || 0}</Text>
+              <Text style={styles.socialStatLabel}>Followers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialStatItem}>
+              <Text style={styles.socialStatValue}>{favorites.length}</Text>
+              <Text style={styles.socialStatLabel}>Likes</Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
 
         {/* Stats Cards */}
@@ -273,7 +288,7 @@ export default function ProfileScreen({ navigation }: Props) {
               >
                 <Ionicons name="game-controller" size={32} color="#FF0050" />
                 <Text style={styles.statValue}>
-                  {user.stats.totalGamesPlayed}
+                  {user.total_games_played || 0}
                 </Text>
                 <Text style={styles.statLabel}>Games Played</Text>
               </LinearGradient>
@@ -286,7 +301,7 @@ export default function ProfileScreen({ navigation }: Props) {
               >
                 <Ionicons name="time" size={32} color="#FF4500" />
                 <Text style={styles.statValue}>
-                  {formatPlayTime(user.stats.totalPlayTime)}
+                  {formatPlayTime(user.total_play_time || 0)}
                 </Text>
                 <Text style={styles.statLabel}>Play Time</Text>
               </LinearGradient>
@@ -299,9 +314,9 @@ export default function ProfileScreen({ navigation }: Props) {
                 colors={['#1a1a1a', '#0a0a0a']}
                 style={styles.statGradient}
               >
-                <Ionicons name="heart" size={32} color="#FF0050" />
-                <Text style={styles.statValue}>{favorites.length}</Text>
-                <Text style={styles.statLabel}>Favorites</Text>
+                <Ionicons name="videocam" size={32} color="#FF0050" />
+                <Text style={styles.statValue}>{user.games_count || 0}</Text>
+                <Text style={styles.statLabel}>Games Created</Text>
               </LinearGradient>
             </View>
 
@@ -350,9 +365,11 @@ export default function ProfileScreen({ navigation }: Props) {
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoLabel}>Member Since</Text>
               <Text style={styles.infoValue}>
-                {user.createdAt?.toDate
-                  ? new Date(user.createdAt.toDate()).toLocaleDateString()
-                  : 'N/A'}
+                {user.created_at
+                  ? new Date(user.created_at).toLocaleDateString()
+                  : user.createdAt?.toDate
+                    ? new Date(user.createdAt.toDate()).toLocaleDateString()
+                    : 'N/A'}
               </Text>
             </View>
           </View>
@@ -362,7 +379,7 @@ export default function ProfileScreen({ navigation }: Props) {
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoLabel}>Account Status</Text>
               <Text style={[styles.infoValue, { color: '#34C759' }]}>
-                {user.isActive ? 'Active' : 'Inactive'}
+                Active
               </Text>
             </View>
           </View>
@@ -531,10 +548,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 20,
   },
-  email: {
-    fontSize: 14,
+  socialStats: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    gap: 40,
+  },
+  socialStatItem: {
+    alignItems: 'center',
+  },
+  socialStatValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  socialStatLabel: {
+    fontSize: 12,
     color: '#666',
     fontWeight: '500',
+    marginTop: 4,
   },
   statsContainer: {
     paddingHorizontal: 20,

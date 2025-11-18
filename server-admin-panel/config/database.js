@@ -257,6 +257,88 @@ const initDatabase = async () => {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // Create game_comments table for TikTok-style comments
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS game_comments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        game_id INT NOT NULL,
+        user_id INT NOT NULL,
+        parent_id INT DEFAULT NULL,
+        content TEXT NOT NULL,
+        likes INT DEFAULT 0,
+        is_pinned BOOLEAN DEFAULT FALSE,
+        is_hidden BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (parent_id) REFERENCES game_comments(id) ON DELETE CASCADE,
+        INDEX idx_game_comments (game_id, created_at DESC),
+        INDEX idx_user_comments (user_id),
+        INDEX idx_parent (parent_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Create comment_likes table
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS comment_likes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        comment_id INT NOT NULL,
+        user_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_comment_like (comment_id, user_id),
+        FOREIGN KEY (comment_id) REFERENCES game_comments(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Create user_follows table for TikTok-style following
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS user_follows (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        follower_id INT NOT NULL,
+        following_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_follow (follower_id, following_id),
+        FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_follower (follower_id),
+        INDEX idx_following (following_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Create game_shares table for tracking shares
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS game_shares (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        game_id INT NOT NULL,
+        user_id INT,
+        platform VARCHAR(50) DEFAULT 'link',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_game_shares (game_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Add follower/following counts to users table
+    await connection.execute(`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS followers_count INT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS games_count INT DEFAULT 0
+    `).catch(() => {
+      // Columns may already exist
+    });
+
+    // Add comments_count to games table
+    await connection.execute(`
+      ALTER TABLE games
+      ADD COLUMN IF NOT EXISTS comments_count INT DEFAULT 0
+    `).catch(() => {
+      // Column may already exist
+    });
+
     // Insert default app settings
     await connection.execute(`
       INSERT IGNORE INTO app_settings (setting_key, setting_value, setting_type, description, is_public) VALUES

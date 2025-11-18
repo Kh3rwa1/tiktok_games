@@ -1,23 +1,52 @@
 // User types
 export interface User {
-  id: string;
-  uid: string;
+  id: string | number;
+  uid?: string;
   username: string;
   email: string;
   avatar?: string;
   bio?: string;
-  favoriteGames: string[];
-  playHistory: PlayHistoryEntry[];
-  stats: UserStats;
-  isActive: boolean;
+  favoriteGames?: string[];
+  playHistory?: PlayHistoryEntry[];
+  stats?: UserStats;
+  isActive?: boolean;
   role: 'user' | 'admin';
-  createdAt: Date | any;
-  updatedAt: Date | any;
+  followers_count?: number;
+  following_count?: number;
+  games_count?: number;
+  total_games_played?: number;
+  total_play_time?: number;
+  createdAt?: Date | any;
+  updatedAt?: Date | any;
+  created_at?: string;
+  is_following?: number;
 }
 
 export interface UserStats {
   totalGamesPlayed: number;
   totalPlayTime: number;
+}
+
+// Comment types
+export interface Comment {
+  id: number;
+  game_id: number;
+  user_id: number;
+  parent_id: number | null;
+  content: string;
+  likes: number;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
+  username: string;
+  avatar: string;
+  reply_count: number;
+  is_liked: number;
+}
+
+// Social types
+export interface UserProfile extends User {
+  games?: Game[];
 }
 
 export interface PlayHistoryEntry {
