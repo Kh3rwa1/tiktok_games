@@ -1,12 +1,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Update this to your backend URL
-const API_URL = __DEV__
-  ? 'http://localhost:5000/api'  // Development
-  : 'https://your-production-api.com/api'; // Production
+// ============================================
+// CONFIGURE YOUR SERVER URL HERE
+// ============================================
+const API_URL = 'https://yourdomain.com/api';  // Change this to your cPanel domain
+// ============================================
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
@@ -15,7 +15,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Add auth token to requests
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('userToken');
@@ -24,25 +24,21 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle errors
+// Handle auth errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - logout user
       await AsyncStorage.removeItem('userToken');
-      // You might want to trigger a navigation to login screen here
     }
     return Promise.reject(error);
   }
 );
 
-// Auth API calls
+// Auth API
 export const authAPI = {
   login: (email, password) =>
     api.post('/auth/login', { email, password }),
@@ -60,7 +56,7 @@ export const authAPI = {
     api.put('/auth/password', { currentPassword, newPassword }),
 };
 
-// Games API calls
+// Games API
 export const gamesAPI = {
   getGames: (params = {}) =>
     api.get('/games', { params }),
@@ -91,13 +87,6 @@ export const gamesAPI = {
 
   getRecommended: (limit = 10) =>
     api.get('/games/recommended', { params: { limit } }),
-
-  uploadGameAsset: (formData) =>
-    api.post('/games/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }),
 };
 
 export default api;
