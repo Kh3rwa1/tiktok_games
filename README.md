@@ -12,17 +12,17 @@ tiktok_games/
 │   │   ├── screens/           # App screens
 │   │   ├── store/             # Zustand state management
 │   │   ├── services/          # API services
-│   │   ├── config/            # Firebase configuration
 │   │   ├── types/             # TypeScript definitions
 │   │   └── utils/             # Utility functions
 │   └── package.json
 │
 └── server-admin-panel/        # Node.js Express Backend
-    ├── config/                # Database configuration
+    ├── config/                # Server & database configuration
     ├── controllers/           # Business logic
-    ├── middleware/            # Auth, security
-    ├── models/                # Database models
+    ├── middleware/            # Auth, security, validation
+    ├── models/                # MySQL database models
     ├── routes/                # API routes
+    ├── public/                # Static files & admin panel
     └── server.js              # Entry point
 ```
 
@@ -32,8 +32,8 @@ tiktok_games/
 - **Framework**: React Native 0.73+ with Expo 50+
 - **Language**: TypeScript
 - **State Management**: Zustand
-- **Authentication**: Firebase Auth
-- **Database**: Firebase Firestore
+- **Authentication**: JWT tokens with secure storage
+- **API Client**: Custom fetch-based client with retry logic
 - **Animations**: React Native Reanimated (60fps)
 - **UI**: Custom Neo-Brutalism design
 
@@ -41,8 +41,9 @@ tiktok_games/
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **Database**: MySQL 8.x
-- **Authentication**: JWT
-- **Security**: Helmet, CORS, Rate Limiting
+- **Authentication**: JWT (access + refresh tokens)
+- **Security**: Helmet, CORS, Rate Limiting, XSS Protection
+- **File Uploads**: Multer with validation
 
 ---
 
@@ -98,6 +99,7 @@ cp .env.example .env
 # Server Configuration
 NODE_ENV=production
 PORT=5000
+DOMAIN=https://yourdomain.com
 
 # Database Configuration
 DB_HOST=localhost
@@ -106,22 +108,26 @@ DB_PASSWORD=your_secure_password
 DB_NAME=yourusername_tiktokgames
 DB_PORT=3306
 
-# Security
-JWT_SECRET=generate-a-random-64-character-string-here
+# Security - Generate strong secrets!
+JWT_SECRET=<generate-with-openssl-rand-hex-64>
 JWT_EXPIRES_IN=30d
-REFRESH_TOKEN_EXPIRES_IN=90d
+JWT_REFRESH_EXPIRES_IN=90d
 
-# CORS (your frontend domain)
+# CORS (your frontend domains)
 ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=1000
-AUTH_RATE_LIMIT_MAX=50
+# Admin credentials - CHANGE THESE!
+ADMIN_USERNAME=your_admin_username
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=your_strong_password_here
 ```
 
-**Important**: Generate a strong JWT secret:
+**Important**: Generate secure secrets:
 ```bash
+# Generate JWT secret
+openssl rand -hex 64
+
+# Generate session secret
 openssl rand -hex 32
 ```
 
@@ -178,7 +184,10 @@ RewriteRule ^api/(.*)$ http://localhost:5000/api/$1 [P,L]
 ### Step 9: Verify Installation
 
 ```bash
+# Check server health
 curl https://yourdomain.com/health
+
+# Test API endpoint
 curl https://yourdomain.com/api/games
 ```
 
@@ -207,7 +216,6 @@ curl https://yourdomain.com/api/games
 
 - Node.js 18+ and npm/yarn
 - Expo CLI: `npm install -g expo-cli`
-- Firebase account
 - iOS Simulator (Mac) or Android Emulator
 - Expo Go app on physical device (optional)
 
@@ -218,76 +226,21 @@ cd mobile
 npm install
 ```
 
-### Step 2: Firebase Setup
-
-#### Create Firebase Project
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click **Add Project**
-3. Enter project name (e.g., "tiktok-games")
-4. Disable Google Analytics (optional)
-5. Click **Create Project**
-
-#### Enable Authentication
-
-1. In Firebase Console, go to **Authentication**
-2. Click **Get Started**
-3. Enable **Email/Password** sign-in method
-
-#### Create Firestore Database
-
-1. Go to **Firestore Database**
-2. Click **Create Database**
-3. Choose **Start in test mode** (for development)
-4. Select a location close to your users
-
-#### Configure Firestore Rules
-
-In Firestore > Rules, set:
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can read/write their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Games are readable by all, writable by authenticated users
-    match /games/{gameId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-  }
-}
-```
-
-#### Get Firebase Configuration
-
-1. In Firebase Console, go to **Project Settings** (gear icon)
-2. Scroll to **Your Apps** section
-3. Click **Add App** > **Web** (</>)
-4. Register app with a nickname
-5. Copy the configuration values
-
-### Step 3: Configure Environment Variables
+### Step 2: Configure Environment Variables
 
 Create `.env` file in the `mobile` directory:
 
 ```env
-# Firebase Configuration
-EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
-EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
-
-# API Configuration (for MySQL backend integration)
+# API Configuration - Point to your backend server
 EXPO_PUBLIC_API_URL=https://yourdomain.com/api
 ```
 
-### Step 4: Run Development Server
+For local development:
+```env
+EXPO_PUBLIC_API_URL=http://localhost:5000/api
+```
+
+### Step 3: Run Development Server
 
 ```bash
 # Start Expo development server
@@ -299,7 +252,7 @@ npx expo start --ios    # Open iOS simulator
 npx expo start --android # Open Android emulator
 ```
 
-### Step 5: Run on Device/Simulator
+### Step 4: Run on Device/Simulator
 
 **iOS Simulator (Mac only):**
 ```bash
@@ -315,46 +268,6 @@ npx expo start --android
 1. Install **Expo Go** from App Store/Play Store
 2. Scan the QR code from the terminal
 3. App will load on your device
-
-### Step 6: Initialize Sample Data
-
-Create some test games in Firestore:
-
-1. Go to Firebase Console > Firestore
-2. Create `games` collection
-3. Add a document with these fields:
-```javascript
-{
-  title: "Sample Game",
-  description: "A fun test game",
-  thumbnail: "https://picsum.photos/400/300",
-  gameUrl: "https://example.com/game",
-  category: "casual",
-  difficulty: "easy",
-  creatorId: "system",
-  creator: {
-    username: "Admin",
-    avatar: "https://picsum.photos/100"
-  },
-  stats: {
-    views: 0,
-    plays: 0,
-    likes: 0,
-    shares: 0,
-    averagePlayTime: 0
-  },
-  likedBy: [],
-  ratings: [],
-  averageRating: 0,
-  isActive: true,
-  isFeatured: false,
-  tags: ["test", "sample"],
-  version: "1.0.0",
-  fileSize: 1000000,
-  createdAt: Timestamp.now(),
-  updatedAt: Timestamp.now()
-}
-```
 
 ---
 
@@ -394,7 +307,6 @@ Create `eas.json`:
   "build": {
     "production": {
       "env": {
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "your-prod-key",
         "EXPO_PUBLIC_API_URL": "https://api.yourdomain.com"
       }
     }
@@ -411,7 +323,8 @@ Create `eas.json`:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | User login |
+| POST | `/api/auth/login` | User login (returns access + refresh tokens) |
+| POST | `/api/auth/refresh` | Refresh access token |
 | GET | `/api/auth/me` | Get current user |
 | PUT | `/api/auth/profile` | Update profile |
 | PUT | `/api/auth/password` | Change password |
@@ -430,6 +343,23 @@ Create `eas.json`:
 | POST | `/api/games/:id/play` | Record play session |
 | GET | `/api/games/trending` | Get trending games |
 | GET | `/api/games/recommended` | Get recommended games |
+
+### Social Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/social/feed` | Get personalized feed |
+| POST | `/api/social/users/:id/follow` | Follow user |
+| GET | `/api/social/games/:id/comments` | Get comments |
+| POST | `/api/social/games/:id/comments` | Add comment |
+
+### Sync Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/sync/changes` | Get changes since timestamp |
+| GET | `/api/sync/full` | Full data sync |
+| GET | `/api/sync/heartbeat` | Connection check |
 
 ### Query Parameters for `/api/games`
 
@@ -458,7 +388,7 @@ Create `eas.json`:
 - role (ENUM: 'user', 'admin')
 - is_active (BOOLEAN)
 - failed_login_attempts (INT)
-- lock_until (DATETIME)
+- locked_until (DATETIME)
 - last_login (DATETIME)
 - password_changed_at (DATETIME)
 - created_at (TIMESTAMP)
@@ -491,24 +421,36 @@ Create `eas.json`:
 ## Security Features
 
 - **Password Hashing**: bcrypt with 10 rounds
-- **JWT Authentication**: 30-day access tokens
-- **Account Lockout**: 5 failed attempts = 60-minute lock
-- **Rate Limiting**: 1000 requests/15min (50 for auth)
-- **CORS Protection**: Origin whitelist
-- **Security Headers**: Helmet.js
+- **JWT Authentication**: Access tokens (30d) + Refresh tokens (90d)
+- **Account Lockout**: 5 failed attempts = progressive lockout (up to 60min)
+- **Rate Limiting**: 1000 requests/15min general, 50/15min for auth
+- **CORS Protection**: Origin whitelist (configure in .env)
+- **Security Headers**: Helmet.js with CSP
 - **Input Sanitization**: XSS protection
 - **SQL Injection Prevention**: Parameterized queries
+- **File Upload Validation**: Type, size, and content verification
+
+---
+
+## Monitoring & Health
+
+### Health Check Endpoint
+```bash
+GET /health
+```
+Returns server status, database connectivity, memory usage, and response metrics.
+
+### Metrics Endpoint
+```bash
+GET /api/metrics
+```
+Returns detailed performance metrics (admin access recommended).
 
 ---
 
 ## Troubleshooting
 
 ### Mobile App Issues
-
-**Firebase errors:**
-- Verify all `EXPO_PUBLIC_FIREBASE_*` variables in `.env`
-- Check Firebase console for correct configuration values
-- Ensure Firestore rules allow access
 
 **Network errors:**
 - Verify `EXPO_PUBLIC_API_URL` is correct
@@ -519,6 +461,10 @@ Create `eas.json`:
 - Clear cache: `npx expo start --clear`
 - Delete `node_modules` and reinstall
 - Check for TypeScript errors: `npx tsc --noEmit`
+
+**Token expiration:**
+- App automatically handles token refresh
+- If issues persist, clear app data and re-login
 
 ### Server Issues
 
@@ -532,9 +478,13 @@ Create `eas.json`:
 - Check for protocol mismatch (http vs https)
 
 **Authentication errors:**
-- Verify `JWT_SECRET` is set
+- Verify `JWT_SECRET` is set and matches
 - Check token expiration settings
 - Ensure clock sync between servers
+
+**Rate limiting:**
+- Adjust `RATE_LIMIT_MAX_REQUESTS` in .env
+- Check if you're hitting auth rate limits
 
 ---
 

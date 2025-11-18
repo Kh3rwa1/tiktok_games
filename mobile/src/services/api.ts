@@ -17,13 +17,24 @@ const INITIAL_RETRY_DELAY = 1000; // 1 second
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
-  private refreshToken: string | null = null;
+  private refreshTokenValue: string | null = null;
   private isRefreshing: boolean = false;
-  private refreshQueue: Array<() => void> = [];
+  private refreshQueue: Array<{
+    resolve: (token: string) => void;
+    reject: (error: Error) => void;
+  }>[] = [];
   private lastSyncTimestamp: string | null = null;
+  private onAuthError: (() => void) | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Set callback for auth errors (logout user)
+   */
+  setOnAuthError(callback: () => void) {
+    this.onAuthError = callback;
   }
 
   /**
@@ -37,7 +48,7 @@ class ApiClient {
    * Set refresh token
    */
   setRefreshToken(refreshToken: string | null) {
-    this.refreshToken = refreshToken;
+    this.refreshTokenValue = refreshToken;
   }
 
   /**
@@ -47,10 +58,83 @@ class ApiClient {
     if (this.token) return this.token;
     try {
       this.token = await AsyncStorage.getItem('userToken');
-      this.refreshToken = await AsyncStorage.getItem('refreshToken');
+      this.refreshTokenValue = await AsyncStorage.getItem('refreshToken');
       return this.token;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Refresh the access token using refresh token
+   */
+  private async refreshAccessToken(): Promise<string> {
+    if (!this.refreshTokenValue) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: this.refreshTokenValue }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Token refresh failed');
+      }
+
+      // Store new tokens
+      this.token = data.data.token;
+      this.refreshTokenValue = data.data.refreshToken;
+      await AsyncStorage.setItem('userToken', data.data.token);
+      await AsyncStorage.setItem('refreshToken', data.data.refreshToken);
+
+      return data.data.token;
+    } catch (error) {
+      // Clear tokens on refresh failure
+      await this.clearTokens();
+      throw error;
+    }
+  }
+
+  /**
+   * Handle token refresh with queue to prevent multiple simultaneous refreshes
+   */
+  private async handleTokenRefresh(): Promise<string> {
+    if (this.isRefreshing) {
+      // Wait for the current refresh to complete
+      return new Promise((resolve, reject) => {
+        this.refreshQueue.push([{ resolve, reject }]);
+      });
+    }
+
+    this.isRefreshing = true;
+
+    try {
+      const newToken = await this.refreshAccessToken();
+
+      // Resolve all queued promises
+      this.refreshQueue.forEach(queue => {
+        queue.forEach(({ resolve }) => resolve(newToken));
+      });
+      this.refreshQueue = [];
+
+      return newToken;
+    } catch (error) {
+      // Reject all queued promises
+      this.refreshQueue.forEach(queue => {
+        queue.forEach(({ reject }) => reject(error as Error));
+      });
+      this.refreshQueue = [];
+
+      throw error;
+    } finally {
+      this.isRefreshing = false;
     }
   }
 
@@ -62,12 +146,13 @@ class ApiClient {
   }
 
   /**
-   * Make HTTP request with retry logic
+   * Make HTTP request with retry logic and automatic token refresh
    */
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    retryCount: number = 0
+    retryCount: number = 0,
+    isRetryAfterRefresh: boolean = false
   ): Promise<T> {
     const token = await this.getStoredToken();
 
@@ -88,11 +173,38 @@ class ApiClient {
 
       const data = await response.json();
 
-      // Handle token expiration
-      if (response.status === 401 && data.code === 'TOKEN_EXPIRED') {
-        // Clear stored token on expiration
-        await this.clearTokens();
-        throw new Error('Session expired. Please login again.');
+      // Handle token expiration - try to refresh
+      if (response.status === 401 && (data.code === 'TOKEN_EXPIRED' || data.code === 'INVALID_TOKEN')) {
+        // Don't retry refresh if we already did
+        if (isRetryAfterRefresh) {
+          await this.clearTokens();
+          if (this.onAuthError) {
+            this.onAuthError();
+          }
+          throw new Error('Session expired. Please login again.');
+        }
+
+        // Try to refresh the token
+        if (this.refreshTokenValue) {
+          try {
+            await this.handleTokenRefresh();
+            // Retry the original request with new token
+            return this.request<T>(endpoint, options, retryCount, true);
+          } catch (refreshError) {
+            // Refresh failed, clear tokens and notify
+            await this.clearTokens();
+            if (this.onAuthError) {
+              this.onAuthError();
+            }
+            throw new Error('Session expired. Please login again.');
+          }
+        } else {
+          await this.clearTokens();
+          if (this.onAuthError) {
+            this.onAuthError();
+          }
+          throw new Error('Session expired. Please login again.');
+        }
       }
 
       if (!response.ok) {
@@ -104,7 +216,7 @@ class ApiClient {
 
       return data;
     } catch (error: any) {
-      // Don't retry auth errors
+      // Don't retry auth errors (except token expiration which is handled above)
       if (error.status === 401 || error.status === 403) {
         throw error;
       }
@@ -118,7 +230,7 @@ class ApiClient {
         const delayMs = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
         console.log(`Retrying request to ${endpoint} in ${delayMs}ms (attempt ${retryCount + 1})`);
         await this.delay(delayMs);
-        return this.request<T>(endpoint, options, retryCount + 1);
+        return this.request<T>(endpoint, options, retryCount + 1, isRetryAfterRefresh);
       }
 
       throw error;
@@ -130,7 +242,7 @@ class ApiClient {
    */
   private async clearTokens(): Promise<void> {
     this.token = null;
-    this.refreshToken = null;
+    this.refreshTokenValue = null;
     await AsyncStorage.multiRemove(['userToken', 'refreshToken']);
   }
 
@@ -150,29 +262,37 @@ class ApiClient {
 
   // ==================== AUTH ====================
 
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    const response = await this.request<ApiResponse<{ user: User; token: string }>>('/api/auth/login', {
+  async login(email: string, password: string): Promise<{ user: User; token: string; refreshToken?: string }> {
+    const response = await this.request<ApiResponse<{ user: User; token: string; refreshToken: string }>>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
     if (response.data) {
       this.token = response.data.token;
+      this.refreshTokenValue = response.data.refreshToken;
       await AsyncStorage.setItem('userToken', response.data.token);
+      if (response.data.refreshToken) {
+        await AsyncStorage.setItem('refreshToken', response.data.refreshToken);
+      }
     }
 
     return response.data!;
   }
 
-  async register(username: string, email: string, password: string): Promise<{ user: User; token: string }> {
-    const response = await this.request<ApiResponse<{ user: User; token: string }>>('/api/auth/register', {
+  async register(username: string, email: string, password: string): Promise<{ user: User; token: string; refreshToken?: string }> {
+    const response = await this.request<ApiResponse<{ user: User; token: string; refreshToken: string }>>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ username, email, password }),
     });
 
     if (response.data) {
       this.token = response.data.token;
+      this.refreshTokenValue = response.data.refreshToken;
       await AsyncStorage.setItem('userToken', response.data.token);
+      if (response.data.refreshToken) {
+        await AsyncStorage.setItem('refreshToken', response.data.refreshToken);
+      }
     }
 
     return response.data!;
@@ -180,7 +300,8 @@ class ApiClient {
 
   async logout(): Promise<void> {
     this.token = null;
-    await AsyncStorage.removeItem('userToken');
+    this.refreshTokenValue = null;
+    await AsyncStorage.multiRemove(['userToken', 'refreshToken']);
   }
 
   async getMe(): Promise<User> {

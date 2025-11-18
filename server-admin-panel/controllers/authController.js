@@ -1,15 +1,9 @@
 const User = require('../models/mysql/User');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
-const { handleFailedLogin, resetLoginAttempts } = require('../middleware/auth');
+const { handleFailedLogin, resetLoginAttempts, generateToken, generateRefreshToken, verifyToken } = require('../middleware/auth');
 const { pool } = require('../config/database');
-
-// Generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d'
-  });
-};
+const { config } = require('../config');
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -48,22 +42,32 @@ const register = async (req, res) => {
       bio
     });
 
-    // Generate token
+    // Generate tokens
     const token = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
     res.status(201).json({
       success: true,
       data: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        avatar: user.avatar,
-        token
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar,
+          role: 'user'
+        },
+        token,
+        refreshToken,
+        expiresIn: config.jwt.expiresIn
       }
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ message: 'Server error during registration' });
+    res.status(500).json({
+      success: false,
+      error: 'Server error during registration',
+      code: 'REGISTRATION_ERROR'
+    });
   }
 };
 
@@ -122,28 +126,113 @@ const login = async (req, res) => {
     // Reset login attempts on successful login
     await resetLoginAttempts(user.id);
 
-    // Generate token
+    // Generate tokens
     const token = generateToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
     res.json({
       success: true,
       data: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
-        stats: {
-          totalGamesPlayed: user.total_games_played,
-          totalPlayTime: user.total_play_time
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar,
+          bio: user.bio,
+          stats: {
+            totalGamesPlayed: user.total_games_played,
+            totalPlayTime: user.total_play_time
+          },
+          role: user.role
         },
-        role: user.role,
-        token
+        token,
+        refreshToken,
+        expiresIn: config.jwt.expiresIn
       }
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    res.status(500).json({
+      success: false,
+      error: 'Server error during login',
+      code: 'LOGIN_ERROR'
+    });
+  }
+};
+
+// @desc    Refresh access token
+// @route   POST /api/auth/refresh
+// @access  Public
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken: token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        error: 'Refresh token is required',
+        code: 'MISSING_REFRESH_TOKEN'
+      });
+    }
+
+    // Verify refresh token
+    const decoded = verifyToken(token);
+
+    if (!decoded || decoded.type !== 'refresh') {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid refresh token',
+        code: 'INVALID_REFRESH_TOKEN'
+      });
+    }
+
+    // Get user
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        error: 'Account is inactive',
+        code: 'ACCOUNT_INACTIVE'
+      });
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateToken(user.id);
+    const newRefreshToken = generateRefreshToken(user.id);
+
+    res.json({
+      success: true,
+      data: {
+        token: newAccessToken,
+        refreshToken: newRefreshToken,
+        expiresIn: config.jwt.expiresIn
+      }
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        error: 'Refresh token has expired',
+        code: 'REFRESH_TOKEN_EXPIRED'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Server error during token refresh',
+      code: 'REFRESH_ERROR'
+    });
   }
 };
 
@@ -257,6 +346,7 @@ const changePassword = async (req, res) => {
 module.exports = {
   register,
   login,
+  refreshToken,
   getMe,
   updateProfile,
   changePassword

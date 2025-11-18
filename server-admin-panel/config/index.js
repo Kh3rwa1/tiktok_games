@@ -39,6 +39,24 @@ const validateConfig = () => {
   if (process.env.MAINTENANCE_MODE === 'true') {
     console.warn('\n⚠️  WARNING: Server is running in MAINTENANCE MODE\n');
   }
+
+  // Production-specific warnings
+  if (process.env.NODE_ENV === 'production') {
+    // Warn about CORS configuration
+    if (!process.env.ALLOWED_ORIGINS) {
+      console.warn('\n⚠️  WARNING: ALLOWED_ORIGINS not configured. CORS will reject all cross-origin requests!\n');
+    }
+
+    // Warn about missing admin credentials
+    if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+      console.warn('\n⚠️  WARNING: Admin credentials not fully configured. Default admin account will not be created.\n');
+    }
+
+    // Warn about weak admin password
+    if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.length < 12) {
+      console.warn('\n⚠️  WARNING: ADMIN_PASSWORD should be at least 12 characters for production!\n');
+    }
+  }
 };
 
 /**
@@ -118,14 +136,18 @@ const config = {
 
   // CORS
   cors: {
-    allowedOrigins: parseList(process.env.ALLOWED_ORIGINS, ['*']),
+    // Default to localhost only in development, empty in production (must be configured)
+    allowedOrigins: parseList(
+      process.env.ALLOWED_ORIGINS,
+      process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:5000', 'http://localhost:19006']
+    ),
   },
 
   // Admin
   admin: {
-    username: process.env.ADMIN_USERNAME || 'admin',
-    email: process.env.ADMIN_EMAIL || 'admin@example.com',
-    password: process.env.ADMIN_PASSWORD || 'changeme123!',
+    username: process.env.ADMIN_USERNAME,
+    email: process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD,
   },
 
   // File Uploads

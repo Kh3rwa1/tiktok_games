@@ -12,6 +12,103 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const AdmZip = require('adm-zip');
 
+// File magic bytes for content validation
+const FILE_SIGNATURES = {
+  // Images
+  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
+  'image/png': [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]],
+  'image/gif': [[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]],
+  'image/webp': [[0x52, 0x49, 0x46, 0x46]], // RIFF header (WebP starts with RIFF)
+  // Archives
+  'application/zip': [[0x50, 0x4B, 0x03, 0x04], [0x50, 0x4B, 0x05, 0x06], [0x50, 0x4B, 0x07, 0x08]],
+};
+
+// Map extensions to MIME types
+const EXT_TO_MIME = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.zip': 'application/zip',
+};
+
+/**
+ * Validate file content by checking magic bytes
+ */
+const validateFileContent = async (filePath, expectedExt) => {
+  const mimeType = EXT_TO_MIME[expectedExt.toLowerCase()];
+  if (!mimeType || !FILE_SIGNATURES[mimeType]) {
+    return true; // No signature defined, skip validation
+  }
+
+  const signatures = FILE_SIGNATURES[mimeType];
+  const maxSigLength = Math.max(...signatures.map(s => s.length));
+
+  try {
+    const fd = await fs.open(filePath, 'r');
+    const buffer = Buffer.alloc(maxSigLength);
+    await fd.read(buffer, 0, maxSigLength, 0);
+    await fd.close();
+
+    // Check if any signature matches
+    for (const signature of signatures) {
+      let matches = true;
+      for (let i = 0; i < signature.length; i++) {
+        if (buffer[i] !== signature[i]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error validating file content:', error);
+    return false;
+  }
+};
+
+/**
+ * Middleware to validate uploaded file content
+ */
+const validateUploadedFiles = async (req, res, next) => {
+  if (!req.files) {
+    return next();
+  }
+
+  const invalidFiles = [];
+
+  for (const fieldName of Object.keys(req.files)) {
+    const files = req.files[fieldName];
+    for (const file of files) {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const isValid = await validateFileContent(file.path, ext);
+
+      if (!isValid) {
+        invalidFiles.push(file.originalname);
+        // Delete the invalid file
+        try {
+          await fs.unlink(file.path);
+        } catch (e) {
+          console.error('Error deleting invalid file:', e);
+        }
+      }
+    }
+  }
+
+  if (invalidFiles.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: `Invalid file content detected. Files don't match their declared type: ${invalidFiles.join(', ')}`,
+      code: 'INVALID_FILE_CONTENT'
+    });
+  }
+
+  next();
+};
+
 // Configure multer for game uploads
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -374,7 +471,7 @@ router.get('/games/:id', protect, adminOnly, async (req, res) => {
 router.post('/games', protect, adminOnly, upload.fields([
   { name: 'gameFile', maxCount: 1 },
   { name: 'thumbnail', maxCount: 1 }
-]), async (req, res) => {
+]), validateUploadedFiles, async (req, res) => {
   try {
     const { title, description, category, difficulty, tags, controls, requirements } = req.body;
 
@@ -490,7 +587,7 @@ router.post('/games', protect, adminOnly, upload.fields([
 router.put('/games/:id', protect, adminOnly, upload.fields([
   { name: 'gameFile', maxCount: 1 },
   { name: 'thumbnail', maxCount: 1 }
-]), async (req, res) => {
+]), validateUploadedFiles, async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
