@@ -14,6 +14,7 @@ import {
   Share,
   Dimensions,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -263,6 +264,52 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
           domStorageEnabled
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
+          // Fullscreen support for HTML5 games
+          allowsFullscreenVideo
+          allowsBackForwardNavigationGestures={false}
+          bounces={false}
+          scrollEnabled={false}
+          // Scale to fit viewport properly
+          scalesPageToFit={Platform.OS === 'android'}
+          // Android specific settings
+          mixedContentMode="compatibility"
+          overScrollMode="never"
+          setSupportMultipleWindows={false}
+          // iOS specific settings
+          allowsLinkPreview={false}
+          // Inject JavaScript to ensure proper viewport and fullscreen handling
+          injectedJavaScript={`
+            (function() {
+              // Set viewport meta tag for proper scaling
+              var viewport = document.querySelector('meta[name="viewport"]');
+              if (!viewport) {
+                viewport = document.createElement('meta');
+                viewport.name = 'viewport';
+                document.head.appendChild(viewport);
+              }
+              viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+
+              // Prevent default touch behaviors that might interfere with games
+              document.addEventListener('touchmove', function(e) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                  // Allow touch events but prevent page scroll
+                }
+              }, { passive: true });
+
+              // Handle fullscreen API
+              if (document.documentElement.requestFullscreen) {
+                document.documentElement.style.width = '100%';
+                document.documentElement.style.height = '100%';
+                document.body.style.width = '100%';
+                document.body.style.height = '100%';
+                document.body.style.margin = '0';
+                document.body.style.padding = '0';
+                document.body.style.overflow = 'hidden';
+              }
+
+              true;
+            })();
+          `}
           onError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
             console.error('WebView error:', nativeEvent);

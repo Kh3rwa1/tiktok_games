@@ -16,7 +16,10 @@ import {
   Modal,
   Dimensions,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -55,6 +58,7 @@ interface Props {
 export default function ProfileScreen({ navigation }: Props) {
   const { user, signOut, updateProfile, isLoading } = useAuthStore();
   const { fetchFavorites, favorites } = useGameStore();
+  const insets = useSafeAreaInsets();
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editUsername, setEditUsername] = useState('');
@@ -216,7 +220,7 @@ export default function ProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header Gradient */}
       <LinearGradient
         colors={['#1a0a1a', '#000']}
@@ -225,7 +229,7 @@ export default function ProfileScreen({ navigation }: Props) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 20 }]}
       >
         {/* Profile Header */}
         <Animated.View style={[styles.header, headerStyle]} entering={FadeIn}>
@@ -393,14 +397,17 @@ export default function ProfileScreen({ navigation }: Props) {
         transparent
         onRequestClose={() => setShowEditModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <Animated.View
             style={styles.modalContent}
             entering={FadeInDown.springify()}
           >
             <LinearGradient
               colors={['#1a1a1a', '#0a0a0a']}
-              style={styles.modalGradient}
+              style={[styles.modalGradient, { paddingBottom: Math.max(insets.bottom, 20) }]}
             >
               {/* Modal Header */}
               <View style={styles.modalHeader}>
@@ -470,9 +477,9 @@ export default function ProfileScreen({ navigation }: Props) {
               </View>
             </LinearGradient>
           </Animated.View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -496,7 +503,6 @@ const styles = StyleSheet.create({
     height: 300,
   },
   scrollContent: {
-    paddingTop: 60,
     paddingBottom: 40,
   },
   header: {
@@ -660,7 +666,6 @@ const styles = StyleSheet.create({
   },
   modalGradient: {
     paddingTop: 24,
-    paddingBottom: 40,
   },
   modalHeader: {
     flexDirection: 'row',

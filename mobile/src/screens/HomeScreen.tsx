@@ -142,6 +142,7 @@ const AnimatedGameItem = React.memo(({
           onPress={onPress}
           showLikeButton
           showStats
+          fullScreen
           style={styles.gameCard}
         />
       </TouchableOpacity>
