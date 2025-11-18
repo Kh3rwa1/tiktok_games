@@ -2,6 +2,22 @@
 
 A premium mobile gaming platform with React Native app and Node.js backend featuring AAA+ quality UI/UX, smooth 60fps animations, and comprehensive game management.
 
+## ⚠️ Important: Admin Panel Access
+
+**DO NOT** open `server-admin-panel/public/index.html` directly in your browser! The admin panel is a **server-side application** that requires Node.js to run.
+
+**Quick Start:**
+```bash
+cd server-admin-panel
+npm install
+npm start
+# Then open: http://localhost:5000
+```
+
+See [Accessing the Admin Panel](#accessing-the-admin-panel) and [App Customization Guide](#app-customization-guide) sections for detailed instructions.
+
+---
+
 ## Architecture Overview
 
 ```
@@ -485,6 +501,241 @@ Returns detailed performance metrics (admin access recommended).
 **Rate limiting:**
 - Adjust `RATE_LIMIT_MAX_REQUESTS` in .env
 - Check if you're hitting auth rate limits
+
+---
+
+## Accessing the Admin Panel
+
+### Important: Do NOT Open index.html Directly
+
+The admin panel located at `server-admin-panel/public/index.html` **cannot be opened directly** in a browser as a file (`file://` protocol). It requires the Node.js server to be running.
+
+### Correct Way to Access Admin Panel
+
+1. **Ensure server is running:**
+   ```bash
+   cd server-admin-panel
+   npm start
+   ```
+
+2. **Access via browser:**
+   - Local development: `http://localhost:5000`
+   - Production: `https://yourdomain.com`
+
+3. **First time setup:**
+   - If no admin user exists, you'll see a setup prompt
+   - Create your admin account
+   - Login with the credentials you created
+
+### What Happens When Opened Directly
+
+If you try to open `index.html` directly as a file, you'll see an error message explaining:
+- The admin panel requires a server to function
+- Step-by-step instructions to start the server
+- The correct URL to access the panel
+
+---
+
+## App Customization Guide
+
+This section covers how to customize the branding and appearance of both the mobile app and admin panel.
+
+### Changing the App Name
+
+#### Mobile App Name
+
+1. **Open `mobile/app.json`**
+2. **Modify the following fields:**
+   ```json
+   {
+     "expo": {
+       "name": "Your App Name",           // Display name on home screen
+       "slug": "your-app-slug",           // URL-friendly identifier
+       "android": {
+         "package": "com.yourcompany.yourapp"  // Android package name
+       },
+       "ios": {
+         "bundleIdentifier": "com.yourcompany.yourapp"  // iOS bundle ID
+       }
+     }
+   }
+   ```
+
+3. **Update package.json name:**
+   ```bash
+   # Edit mobile/package.json
+   "name": "your-app-name"
+   ```
+
+#### Admin Panel Name
+
+1. **Open `server-admin-panel/public/index.html`**
+2. **Change the page title (line 6):**
+   ```html
+   <title>Admin Panel - Your App Name</title>
+   ```
+
+3. **Update the app logo/name in login screen (around line 1495):**
+   ```html
+   <h1><i class="fas fa-gamepad"></i> YOUR APP NAME</h1>
+   <p>Neo-Brutalism Admin Panel</p>
+   ```
+
+4. **Search and replace "KISKU" with your app name:**
+   ```bash
+   # In server-admin-panel/public/index.html
+   # Replace all occurrences of "KISKU" with your brand name
+   ```
+
+### Changing the App Logo
+
+#### Mobile App Logo/Icon
+
+1. **Prepare your logo files:**
+   - **App Icon**: 1024x1024 PNG (for both iOS and Android)
+   - **Splash Screen**: 1284x2778 PNG (adjust as needed)
+
+2. **Replace in `mobile/assets/`:**
+   ```bash
+   mobile/assets/
+   ├── icon.png          # Replace with your 1024x1024 app icon
+   ├── splash.png        # Replace with your splash screen image
+   └── adaptive-icon.png # Replace with your Android adaptive icon (optional)
+   ```
+
+3. **Update `mobile/app.json` to reference your icons:**
+   ```json
+   {
+     "expo": {
+       "icon": "./assets/icon.png",
+       "splash": {
+         "image": "./assets/splash.png",
+         "resizeMode": "contain",
+         "backgroundColor": "#ffffff"
+       },
+       "android": {
+         "adaptiveIcon": {
+           "foregroundImage": "./assets/adaptive-icon.png",
+           "backgroundColor": "#ffffff"
+         }
+       }
+     }
+   }
+   ```
+
+4. **Rebuild the app to apply changes:**
+   ```bash
+   cd mobile
+   npx expo start --clear
+   ```
+
+#### Admin Panel Logo
+
+1. **Replace the Font Awesome icon with your logo:**
+
+   In `server-admin-panel/public/index.html`, find the login screen section (around line 1495):
+
+   **Before:**
+   ```html
+   <h1><i class="fas fa-gamepad"></i> KISKU</h1>
+   ```
+
+   **After (with custom image):**
+   ```html
+   <h1><img src="/logo.png" alt="Logo" style="height: 40px; vertical-align: middle;"> YOUR APP</h1>
+   ```
+
+2. **Place your logo file:**
+   ```bash
+   # Add your logo to the public directory
+   server-admin-panel/public/logo.png
+   ```
+
+3. **Update the header/sidebar logo** (search for all logo references in index.html)
+
+### Customizing Colors and Theme
+
+#### Mobile App Colors
+
+Edit `mobile/src/theme/colors.ts` (or create if not exists):
+
+```typescript
+export const colors = {
+  primary: '#FF6B6B',      // Your primary brand color
+  secondary: '#4ECDC4',    // Secondary color
+  accent: '#FFDE59',       // Accent color
+  background: '#FFFEF0',   // Background color
+  text: '#000000',         // Primary text color
+  // Add more colors as needed
+};
+```
+
+Then use these colors throughout your components.
+
+#### Admin Panel Colors
+
+In `server-admin-panel/public/index.html`, modify the CSS variables (around line 12-23):
+
+```css
+:root {
+  /* Change these to your brand colors */
+  --primary: #FF6B6B;          /* Your primary color */
+  --secondary: #4ECDC4;        /* Your secondary color */
+  --accent: #FFDE59;           /* Your accent color */
+  --bg-primary: #FFFEF0;       /* Background color */
+  /* ... more variables ... */
+}
+```
+
+### Changing the Backend API URL
+
+#### Mobile App API Configuration
+
+1. **Create/Edit `mobile/.env`:**
+   ```env
+   # Local development
+   EXPO_PUBLIC_API_URL=http://localhost:5000/api
+
+   # Production
+   # EXPO_PUBLIC_API_URL=https://api.yourdomain.com/api
+   ```
+
+2. **Ensure the API client uses this variable:**
+
+   Check `mobile/src/services/api.ts` or similar file to ensure it reads:
+   ```typescript
+   const API_URL = process.env.EXPO_PUBLIC_API_URL;
+   ```
+
+### Quick Customization Checklist
+
+- [ ] Change app name in `mobile/app.json`
+- [ ] Update Android package name and iOS bundle identifier
+- [ ] Replace app icon (`mobile/assets/icon.png`)
+- [ ] Replace splash screen (`mobile/assets/splash.png`)
+- [ ] Update admin panel title in `server-admin-panel/public/index.html`
+- [ ] Replace "KISKU" with your app name throughout
+- [ ] Add your logo to admin panel
+- [ ] Customize color scheme in both mobile app and admin panel
+- [ ] Update API URL in mobile app `.env`
+- [ ] Test both apps to ensure branding is consistent
+
+### Files to Modify (Quick Reference)
+
+```
+📁 Branding Files
+├── mobile/
+│   ├── app.json                    # App name, bundle IDs
+│   ├── package.json                # Package name
+│   ├── assets/icon.png             # App icon
+│   ├── assets/splash.png           # Splash screen
+│   └── .env                        # API URL
+│
+└── server-admin-panel/
+    └── public/
+        ├── index.html              # Admin panel UI, title, logo, colors
+        └── logo.png                # Your logo file (add this)
+```
 
 ---
 
