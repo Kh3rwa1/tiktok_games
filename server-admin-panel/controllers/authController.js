@@ -197,7 +197,7 @@ const refreshToken = async (req, res) => {
       });
     }
 
-    if (!user.isActive) {
+    if (!user.is_active) {
       return res.status(401).json({
         success: false,
         error: 'Account is inactive',
