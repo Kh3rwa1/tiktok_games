@@ -5,7 +5,6 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import SkeletonContent from 'react-native-skeleton-content-nonexpo';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

@@ -37,7 +37,7 @@
     "expo-blur": "~12.9.0",
     "firebase": "^10.7.1",
     "zustand": "^4.4.7",
-    "react-native-skeleton-content-nonexpo": "^1.0.13",
+    "react-native-skeleton-placeholder": "^5.2.4",
     "lottie-react-native": "6.5.1",
     "react-native-fast-image": "^8.6.3",
     "react-native-modal": "^13.0.1",
