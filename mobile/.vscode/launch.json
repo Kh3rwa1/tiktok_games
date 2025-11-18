@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to Expo",
+      "type": "node",
+      "request": "attach",
+      "port": 19000,
+      "timeout": 30000
+    },
+    {
+      "name": "Debug iOS",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "ios",
+      "target": "simulator"
+    },
+    {
+      "name": "Debug Android",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "android",
+      "target": "emulator"
+    }
+  ]
+}

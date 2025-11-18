@@ -39,7 +39,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
@@ -58,10 +58,11 @@ const { width, height } = Dimensions.get('window');
 // Dynamic tab bar height based on platform
 const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 80 : 60;
 const STATUS_BAR_HEIGHT = StatusBar.currentHeight || 44;
+const ITEM_HEIGHT = 280; // Height of each game card item
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Home'>,
-  NativeStackNavigationProp<RootStackParamList>
+  StackNavigationProp<RootStackParamList>
 >;
 
 interface Props {

@@ -28,7 +28,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 // Stores & Types
 import { useAuthStore } from '../../store/authStore';
@@ -42,7 +42,7 @@ import { triggerMedium, triggerSuccess, triggerError } from '../../utils/haptics
 
 const { width, height } = Dimensions.get('window');
 
-type RegisterScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
+type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
 
 interface Props {
   navigation: RegisterScreenNavigationProp;

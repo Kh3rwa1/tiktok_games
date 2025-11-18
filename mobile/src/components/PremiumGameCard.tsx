@@ -6,18 +6,16 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  Image,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-  interpolate,
-  Extrapolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import FastImage from 'react-native-fast-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Game } from '../types';
 import { triggerMedium, triggerSuccessPattern } from '../utils/haptics';
@@ -38,7 +36,7 @@ export interface PremiumGameCardProps {
 }
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
   game,
@@ -158,14 +156,10 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
         {/* Image Container with Gradient Overlay */}
         <View style={styles.imageContainer}>
           {!imageError ? (
-            <AnimatedFastImage
-              source={{
-                uri: game.thumbnail,
-                priority: FastImage.priority.high,
-                cache: FastImage.cacheControl.immutable,
-              }}
+            <AnimatedImage
+              source={{ uri: game.thumbnail }}
               style={[styles.image, imageAnimatedStyle]}
-              resizeMode={FastImage.resizeMode.cover}
+              resizeMode="cover"
               onError={() => setImageError(true)}
             />
           ) : (

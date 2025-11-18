@@ -23,7 +23,7 @@ import Animated, {
 import { useGameStore } from '../store/gameStore';
 import { RootStackParamList, Game, GameCategory } from '../types';
 import { PremiumGameCard, LoadingSkeleton } from '../components';
-import { haptics } from '../utils/haptics';
+import haptics from '../utils/haptics';
 
 const { width } = Dimensions.get('window');
 
