@@ -193,10 +193,7 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <LinearGradient
-      colors={['#000000', '#1a0a1a', '#000000']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -208,15 +205,10 @@ export default function LoginScreen({ navigation }: Props) {
         >
           {/* Logo Section */}
           <Animated.View style={[styles.logoContainer, logoStyle]}>
-            <LinearGradient
-              colors={['#FF0050', '#FF4500']}
-              style={styles.logoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="game-controller" size={60} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.title}>TikTok Games</Text>
+            <View style={styles.logoGradient}>
+              <Ionicons name="game-controller" size={60} color="#000000" />
+            </View>
+            <Text style={styles.title}>Kisku</Text>
             <Text style={styles.subtitle}>Welcome back! Ready to play?</Text>
           </Animated.View>
 
@@ -225,7 +217,7 @@ export default function LoginScreen({ navigation }: Props) {
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <View style={styles.inputIconContainer}>
-                <Ionicons name="mail-outline" size={20} color="#666" />
+                <Ionicons name="mail-outline" size={20} color="#000000" />
               </View>
               <TextInput
                 style={styles.input}
@@ -243,7 +235,7 @@ export default function LoginScreen({ navigation }: Props) {
             {/* Password Input */}
             <View style={styles.inputContainer}>
               <View style={styles.inputIconContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" />
+                <Ionicons name="lock-closed-outline" size={20} color="#000000" />
               </View>
               <TextInput
                 style={styles.input}
@@ -264,7 +256,7 @@ export default function LoginScreen({ navigation }: Props) {
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color="#666"
+                  color="#000000"
                 />
               </TouchableOpacity>
             </View>
@@ -308,13 +300,14 @@ export default function LoginScreen({ navigation }: Props) {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFEF0',
   },
   keyboardView: {
     flex: 1,
@@ -332,27 +325,30 @@ const styles = StyleSheet.create({
   logoGradient: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#FF0050',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     elevation: 12,
+    backgroundColor: '#FF6B6B',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   title: {
     fontSize: 32,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#999',
-    fontWeight: '500',
+    color: '#000000',
+    fontWeight: '700',
   },
   formContainer: {
     width: '100%',
@@ -361,12 +357,17 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
+    backgroundColor: '#FFFEF0',
+    borderRadius: 0,
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#2a2a2a',
+    borderWidth: 3,
+    borderColor: '#000000',
     height: 60,
+    shadowColor: '#000000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
   inputIconContainer: {
     paddingLeft: 16,
@@ -374,9 +375,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
+    color: '#000000',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '700',
     paddingRight: 16,
   },
   passwordToggle: {
@@ -393,13 +394,13 @@ const styles = StyleSheet.create({
   },
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#2a2a2a',
+    height: 3,
+    backgroundColor: '#000000',
   },
   dividerText: {
-    color: '#666',
+    color: '#000000',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '900',
     marginHorizontal: 16,
   },
   registerContainer: {
@@ -407,13 +408,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   registerText: {
-    color: '#999',
+    color: '#000000',
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   registerLink: {
-    color: '#FF0050',
-    fontWeight: '700',
+    color: '#FF6B6B',
+    fontWeight: '900',
   },
   footer: {
     marginTop: 'auto',
@@ -421,9 +422,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   footerText: {
-    color: '#666',
+    color: '#000000',
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
+    fontWeight: '700',
   },
 });

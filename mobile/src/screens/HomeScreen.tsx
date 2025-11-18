@@ -321,7 +321,7 @@ export default function HomeScreen({ navigation }: Props) {
         style={styles.footerLoader}
         entering={FadeIn.duration(300)}
       >
-        <ActivityIndicator size="large" color="#FF0050" />
+        <ActivityIndicator size="large" color="#FF6B6B" />
         <Text style={styles.footerText}>Loading more games...</Text>
       </Animated.View>
     );
@@ -342,7 +342,7 @@ export default function HomeScreen({ navigation }: Props) {
         entering={ZoomIn.springify()}
       >
         <Animated.View entering={FadeInDown.delay(100)}>
-          <Ionicons name="game-controller-outline" size={80} color="#333" />
+          <Ionicons name="game-controller-outline" size={80} color="#000000" />
         </Animated.View>
         <Animated.Text
           style={styles.emptyTitle}
@@ -362,15 +362,10 @@ export default function HomeScreen({ navigation }: Props) {
             onPress={loadInitialFeed}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#FF0050', '#FF4500']}
-              style={styles.retryGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="refresh" size={20} color="#fff" />
+            <View style={styles.retryGradient}>
+              <Ionicons name="refresh" size={20} color="#000000" />
               <Text style={styles.retryText}>Retry</Text>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>
@@ -387,7 +382,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFEF0" />
 
       {/* Premium Header with Blur */}
       <Animated.View style={[styles.header, headerStyle]}>
@@ -426,7 +421,7 @@ export default function HomeScreen({ navigation }: Props) {
                   navigation.navigate('Notifications');
                 }}
               >
-                <Ionicons name="notifications-outline" size={24} color="#fff" />
+                <Ionicons name="notifications-outline" size={24} color="#000000" />
                 {unreadCount > 0 && (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.notificationCount}>
@@ -484,28 +479,20 @@ export default function HomeScreen({ navigation }: Props) {
             onPress={scrollToTop}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#FF0050', '#FF4500']}
-              style={styles.fabGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="arrow-up" size={24} color="#fff" />
-            </LinearGradient>
+            <View style={styles.fabGradient}>
+              <Ionicons name="arrow-up" size={24} color="#000000" />
+            </View>
           </TouchableOpacity>
         </Animated.View>
       )}
 
       {/* Current Game Indicator */}
       <View style={styles.pageIndicator}>
-        <LinearGradient
-          colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.4)']}
-          style={styles.indicatorGradient}
-        >
+        <View style={styles.indicatorGradient}>
           <Text style={styles.indicatorText}>
             {currentIndex + 1} / {games.length || 1}
           </Text>
-        </LinearGradient>
+        </View>
       </View>
 
       {/* Error Display */}
@@ -526,7 +513,7 @@ export default function HomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FFFEF0',
   },
   header: {
     position: 'absolute',
@@ -541,6 +528,7 @@ const styles = StyleSheet.create({
   headerGradient: {
     paddingTop: Platform.OS === 'ios' ? 50 : STATUS_BAR_HEIGHT + 10,
     paddingBottom: 16,
+    backgroundColor: '#FFFEF0',
   },
   headerContent: {
     flexDirection: 'row',
@@ -559,17 +547,17 @@ const styles = StyleSheet.create({
   feedTabActive: {},
   feedTabText: {
     fontSize: 17,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '700',
+    color: 'rgba(0,0,0,0.5)',
   },
   feedTabTextActive: {
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
   },
   feedTabDivider: {
-    width: 1,
+    width: 3,
     height: 16,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: '#000000',
     marginHorizontal: 4,
   },
   notificationButton: {
@@ -580,17 +568,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: '#FF0050',
+    backgroundColor: '#FF6B6B',
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#000000',
   },
   notificationCount: {
-    color: '#fff',
+    color: '#000000',
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '900',
   },
   gameItemContainer: {
     height: ITEM_HEIGHT,
@@ -612,9 +602,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   footerText: {
-    color: '#666',
+    color: '#000000',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 12,
   },
   emptyContainer: {
@@ -626,26 +616,28 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginTop: 20,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#000000',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
   },
   retryButton: {
-    borderRadius: 30,
+    borderRadius: 0,
     overflow: 'hidden',
-    shadowColor: '#FF0050',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     elevation: 6,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   retryGradient: {
     flexDirection: 'row',
@@ -653,28 +645,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 16,
     gap: 8,
+    backgroundColor: '#FF6B6B',
   },
   retryText: {
-    color: '#fff',
+    color: '#000000',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '900',
   },
   fab: {
     position: 'absolute',
     bottom: 100,
     right: 20,
-    shadowColor: '#FF0050',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     elevation: 10,
   },
   fabGradient: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FF6B6B',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   pageIndicator: {
     position: 'absolute',
@@ -684,29 +680,34 @@ const styles = StyleSheet.create({
   indicatorGradient: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 0,
+    backgroundColor: '#FFDE59',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   indicatorText: {
-    color: '#fff',
+    color: '#000000',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '900',
   },
   errorContainer: {
     position: 'absolute',
     bottom: 100,
     left: 20,
     right: 20,
-    borderRadius: 12,
+    borderRadius: 0,
     overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   errorBlur: {
     padding: 16,
-    backgroundColor: 'rgba(255, 0, 80, 0.8)',
+    backgroundColor: '#FF6B6B',
   },
   errorText: {
-    color: '#fff',
+    color: '#000000',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '900',
     textAlign: 'center',
   },
 });

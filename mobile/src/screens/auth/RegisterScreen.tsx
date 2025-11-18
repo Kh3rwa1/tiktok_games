@@ -169,7 +169,7 @@ export default function RegisterScreen({ navigation }: Props) {
       Toast.show({
         type: 'success',
         text1: 'Account Created!',
-        text2: 'Welcome to TikTok Games',
+        text2: 'Welcome to Kisku',
         position: 'top',
         visibilityTime: 2000,
       });
@@ -239,10 +239,7 @@ export default function RegisterScreen({ navigation }: Props) {
   const passwordStrength = getPasswordStrength();
 
   return (
-    <LinearGradient
-      colors={['#000000', '#1a0a1a', '#000000']}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -254,16 +251,11 @@ export default function RegisterScreen({ navigation }: Props) {
         >
           {/* Logo Section */}
           <Animated.View style={[styles.logoContainer, logoStyle]}>
-            <LinearGradient
-              colors={['#FF0050', '#FF4500']}
-              style={styles.logoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="game-controller" size={60} color="#fff" />
-            </LinearGradient>
+            <View style={styles.logoGradient}>
+              <Ionicons name="game-controller" size={60} color="#000000" />
+            </View>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join the gaming community</Text>
+            <Text style={styles.subtitle}>Join the Kisku community</Text>
           </Animated.View>
 
           {/* Form Section */}
@@ -271,7 +263,7 @@ export default function RegisterScreen({ navigation }: Props) {
             {/* Username Input */}
             <View style={styles.inputContainer}>
               <View style={styles.inputIconContainer}>
-                <Ionicons name="person-outline" size={20} color="#666" />
+                <Ionicons name="person-outline" size={20} color="#000000" />
               </View>
               <TextInput
                 style={styles.input}
@@ -289,7 +281,7 @@ export default function RegisterScreen({ navigation }: Props) {
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <View style={styles.inputIconContainer}>
-                <Ionicons name="mail-outline" size={20} color="#666" />
+                <Ionicons name="mail-outline" size={20} color="#000000" />
               </View>
               <TextInput
                 style={styles.input}
@@ -307,7 +299,7 @@ export default function RegisterScreen({ navigation }: Props) {
             {/* Password Input */}
             <View style={styles.inputContainer}>
               <View style={styles.inputIconContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" />
+                <Ionicons name="lock-closed-outline" size={20} color="#000000" />
               </View>
               <TextInput
                 style={styles.input}
@@ -328,7 +320,7 @@ export default function RegisterScreen({ navigation }: Props) {
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color="#666"
+                  color="#000000"
                 />
               </TouchableOpacity>
             </View>
@@ -356,7 +348,7 @@ export default function RegisterScreen({ navigation }: Props) {
             {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
               <View style={styles.inputIconContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" />
+                <Ionicons name="lock-closed-outline" size={20} color="#000000" />
               </View>
               <TextInput
                 style={styles.input}
@@ -377,7 +369,7 @@ export default function RegisterScreen({ navigation }: Props) {
                 <Ionicons
                   name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color="#666"
+                  color="#000000"
                 />
               </TouchableOpacity>
             </View>
@@ -421,13 +413,14 @@ export default function RegisterScreen({ navigation }: Props) {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFEF0',
   },
   keyboardView: {
     flex: 1,
@@ -445,27 +438,30 @@ const styles = StyleSheet.create({
   logoGradient: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#FF0050',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
     elevation: 12,
+    backgroundColor: '#4ECDC4',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   title: {
     fontSize: 32,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '900',
+    color: '#000000',
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#999',
-    fontWeight: '500',
+    color: '#000000',
+    fontWeight: '700',
   },
   formContainer: {
     width: '100%',
@@ -474,12 +470,17 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
+    backgroundColor: '#FFFEF0',
+    borderRadius: 0,
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#2a2a2a',
+    borderWidth: 3,
+    borderColor: '#000000',
     height: 60,
+    shadowColor: '#000000',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
   },
   inputIconContainer: {
     paddingLeft: 16,
@@ -487,9 +488,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
+    color: '#000000',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '700',
     paddingRight: 16,
   },
   passwordToggle: {
@@ -500,19 +501,21 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   strengthBar: {
-    height: 4,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: '#000000',
+    borderRadius: 0,
     overflow: 'hidden',
     marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#000000',
   },
   strengthFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 0,
   },
   strengthLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '900',
     textAlign: 'right',
   },
   registerButton: {
@@ -526,13 +529,13 @@ const styles = StyleSheet.create({
   },
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#2a2a2a',
+    height: 3,
+    backgroundColor: '#000000',
   },
   dividerText: {
-    color: '#666',
+    color: '#000000',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '900',
     marginHorizontal: 16,
   },
   loginContainer: {
@@ -540,13 +543,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   loginText: {
-    color: '#999',
+    color: '#000000',
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   loginLink: {
-    color: '#FF0050',
-    fontWeight: '700',
+    color: '#FF6B6B',
+    fontWeight: '900',
   },
   footer: {
     marginTop: 'auto',
@@ -554,9 +557,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   footerText: {
-    color: '#666',
+    color: '#000000',
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
+    fontWeight: '700',
   },
 });

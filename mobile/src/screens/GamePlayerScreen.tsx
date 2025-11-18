@@ -1,7 +1,6 @@
 /**
- * Premium Game Player Screen
- * AAA+ Quality TypeScript Implementation
- * Features: WebView Player, Controls Overlay, Play Tracking, Share, Animated UI
+ * Kisku Game Player Screen
+ * Neo-Brutalism Design - Full Screen Game Experience
  */
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -279,7 +278,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
     triggerMedium();
     try {
       await Share.share({
-        message: `Check out ${game.title}! Play it on TikTok Games.`,
+        message: `Check out ${game.title}! Play it on Kisku.`,
         title: game.title,
       });
     } catch (err) {
@@ -414,7 +413,7 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
         {/* Loading Indicator */}
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FF0050" />
+            <ActivityIndicator size="large" color="#FF6B6B" />
             <Text style={styles.loadingText}>Loading {game.title}...</Text>
           </View>
         )}
@@ -469,8 +468,8 @@ export default function GamePlayerScreen({ navigation, route }: Props) {
                 <LinearGradient
                   colors={
                     isLiked
-                      ? ['#FF0050', '#FF4500']
-                      : ['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)']
+                      ? ['#FF6B6B', '#FF6B6B']
+                      : ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.8)']
                   }
                   style={styles.actionGradient}
                 >
@@ -652,10 +651,12 @@ const styles = StyleSheet.create({
   actionGradient: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   actionText: {
     color: '#fff',

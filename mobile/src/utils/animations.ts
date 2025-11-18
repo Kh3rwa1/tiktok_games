@@ -453,15 +453,17 @@ export const EXITING_ANIMATIONS = {
   },
 };
 
-// ==================== THEME COLORS ====================
+// ==================== THEME COLORS - Neo-Brutalism ====================
 
 export const ANIMATION_COLORS = {
-  primary: '#FF0050',
-  secondary: '#00D4FF',
-  success: '#00FF66',
-  warning: '#FFE500',
-  error: '#FF3333',
-  glow: 'rgba(255, 0, 80, 0.5)',
+  primary: '#FF6B6B',
+  secondary: '#4ECDC4',
+  success: '#A8E6CF',
+  warning: '#FFDE59',
+  error: '#FF6B6B',
+  background: '#FFFEF0',
+  text: '#000000',
+  border: '#000000',
 };
 
 export default {
