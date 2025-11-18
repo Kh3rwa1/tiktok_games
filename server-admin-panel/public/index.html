@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - TikTok Games</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #f3f4f6; }
+    .sidebar { transition: width 0.3s; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-backdrop { background: rgba(0,0,0,0.5); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+    .game-preview { border: none; width: 100%; height: 500px; }
+    .toast { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, createContext, useContext } = React;
+
+    // Auth Context
+    const AuthContext = createContext(null);
+
+    // Toast Context
+    const ToastContext = createContext(null);
+
+    // API Helper
+    const api = {
+      token: localStorage.getItem('adminToken'),
+
+      async request(endpoint, options = {}) {
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {}),
+          ...options.headers
+        };
+
+        if (options.body instanceof FormData) {
+          delete headers['Content-Type'];
+        }
+
+        const res = await fetch(`/api${endpoint}`, {
+          ...options,
+          headers,
+          body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Request failed');
+        return data;
+      },
+
+      setToken(token) {
+        this.token = token;
+        if (token) {
+          localStorage.setItem('adminToken', token);
+        } else {
+          localStorage.removeItem('adminToken');
+        }
+      }
+    };
+
+    // Toast Component
+    function Toast({ message, type, onClose }) {
+      useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+      }, [onClose]);
+
+      const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500',
+        warning: 'bg-yellow-500'
+      };
+
+      return (
+        <div className={`toast fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50`}>
+          {message}
+        </div>
+      );
+    }
+
+    // Login Component
+    function Login({ onLogin }) {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [isSetup, setIsSetup] = useState(false);
+      const [username, setUsername] = useState('');
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+          if (isSetup) {
+            await api.request('/admin/setup', {
+              method: 'POST',
+              body: { username, email, password }
+            });
+            setIsSetup(false);
+            setError('');
+          }
+
+          const { token, user } = await api.request('/auth/login', {
+            method: 'POST',
+            body: { email, password }
+          });
+
+          if (user.role !== 'admin') {
+            throw new Error('Access denied. Admin only.');
+          }
+
+          api.setToken(token);
+          onLogin(user);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500">
+          <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
+              <i className="fas fa-gamepad mr-2"></i>
+              Admin Panel
+            </h1>
+
+            {error && (
+              <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              {isSetup && (
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition disabled:opacity-50"
+              >
+                {loading ? 'Loading...' : (isSetup ? 'Create Admin & Login' : 'Login')}
+              </button>
+            </form>
+
+            <button
+              onClick={() => setIsSetup(!isSetup)}
+              className="w-full mt-4 text-purple-600 text-sm hover:underline"
+            >
+              {isSetup ? 'Already have an admin? Login' : 'First time? Create admin account'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Sidebar Component
+    function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
+      const menuItems = [
+        { id: 'dashboard', icon: 'fa-chart-line', label: 'Dashboard' },
+        { id: 'games', icon: 'fa-gamepad', label: 'Games' },
+        { id: 'users', icon: 'fa-users', label: 'Users' },
+        { id: 'notifications', icon: 'fa-bell', label: 'Notifications' },
+        { id: 'settings', icon: 'fa-cog', label: 'Settings' },
+        { id: 'env', icon: 'fa-file-code', label: 'Environment' },
+      ];
+
+      return (
+        <div className={`sidebar bg-gray-900 text-white h-screen fixed left-0 top-0 ${collapsed ? 'w-16' : 'w-64'} overflow-hidden`}>
+          <div className="p-4 flex items-center justify-between border-b border-gray-700">
+            {!collapsed && <span className="font-bold text-xl">Admin</span>}
+            <button onClick={() => setCollapsed(!collapsed)} className="text-gray-400 hover:text-white">
+              <i className={`fas fa-${collapsed ? 'angle-right' : 'angle-left'}`}></i>
+            </button>
+          </div>
+
+          <nav className="mt-4">
+            {menuItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center px-4 py-3 hover:bg-gray-800 transition ${
+                  activeTab === item.id ? 'bg-purple-600' : ''
+                }`}
+              >
+                <i className={`fas ${item.icon} ${collapsed ? '' : 'mr-3'}`}></i>
+                {!collapsed && <span>{item.label}</span>}
+              </button>
+            ))}
+          </nav>
+        </div>
+      );
+    }
+
+    // Dashboard Component
+    function Dashboard() {
+      const [stats, setStats] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const toast = useContext(ToastContext);
+
+      useEffect(() => {
+        loadStats();
+      }, []);
+
+      const loadStats = async () => {
+        try {
+          const { data } = await api.request('/admin/stats');
+          setStats(data);
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      if (loading) return <div className="p-8 text-center">Loading...</div>;
+
+      return (
+        <div className="fade-in">
+          <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatCard icon="fa-users" label="Total Users" value={stats?.users?.total || 0} color="blue" />
+            <StatCard icon="fa-gamepad" label="Total Games" value={stats?.games?.total || 0} color="purple" />
+            <StatCard icon="fa-play" label="Total Plays" value={stats?.games?.totalPlays || 0} color="green" />
+            <StatCard icon="fa-bell" label="Notifications" value={stats?.notifications?.total || 0} color="yellow" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Recent Users</h2>
+              <div className="space-y-3">
+                {stats?.recentUsers?.map(user => (
+                  <div key={user.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="font-medium">{user.username}</span>
+                    <span className="text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Recent Games</h2>
+              <div className="space-y-3">
+                {stats?.recentGames?.map(game => (
+                  <div key={game.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="font-medium">{game.title}</span>
+                    <span className="text-sm text-gray-500">{game.plays} plays</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function StatCard({ icon, label, value, color }) {
+      const colors = {
+        blue: 'bg-blue-500',
+        purple: 'bg-purple-500',
+        green: 'bg-green-500',
+        yellow: 'bg-yellow-500'
+      };
+
+      return (
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center">
+            <div className={`${colors[color]} text-white p-3 rounded-lg mr-4`}>
+              <i className={`fas ${icon} text-xl`}></i>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">{label}</p>
+              <p className="text-2xl font-bold">{value.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Games Component
+    function Games() {
+      const [games, setGames] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [showUpload, setShowUpload] = useState(false);
+      const [showEdit, setShowEdit] = useState(null);
+      const [showPreview, setShowPreview] = useState(null);
+      const [page, setPage] = useState(1);
+      const [pagination, setPagination] = useState({});
+      const toast = useContext(ToastContext);
+
+      useEffect(() => {
+        loadGames();
+      }, [page]);
+
+      const loadGames = async () => {
+        try {
+          const { data, pagination: pag } = await api.request(`/admin/games?page=${page}&limit=10`);
+          setGames(data);
+          setPagination(pag);
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const toggleFeatured = async (id) => {
+        try {
+          await api.request(`/admin/games/${id}/toggle-featured`, { method: 'PUT' });
+          loadGames();
+          toast.show('Game updated', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      const toggleActive = async (id) => {
+        try {
+          await api.request(`/admin/games/${id}/toggle-active`, { method: 'PUT' });
+          loadGames();
+          toast.show('Game updated', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      const deleteGame = async (id) => {
+        if (!confirm('Delete this game?')) return;
+        try {
+          await api.request(`/admin/games/${id}`, { method: 'DELETE' });
+          loadGames();
+          toast.show('Game deleted', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      if (loading) return <div className="p-8 text-center">Loading...</div>;
+
+      return (
+        <div className="fade-in">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Games Management</h1>
+            <button
+              onClick={() => setShowUpload(true)}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            >
+              <i className="fas fa-upload mr-2"></i>Upload Game
+            </button>
+          </div>
+
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Game</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Category</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Plays</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {games.map(game => (
+                  <tr key={game.id} className="border-t">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        <img src={game.thumbnail} alt="" className="w-12 h-12 rounded object-cover mr-3" />
+                        <div>
+                          <p className="font-medium">{game.title}</p>
+                          <p className="text-sm text-gray-500">{game.difficulty}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 capitalize">{game.category}</td>
+                    <td className="px-4 py-3">{game.plays}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded text-xs ${game.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {game.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                      {game.is_featured && (
+                        <span className="ml-2 px-2 py-1 rounded text-xs bg-yellow-100 text-yellow-800">
+                          Featured
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => setShowPreview(game)} className="text-blue-600 hover:text-blue-800">
+                          <i className="fas fa-eye"></i>
+                        </button>
+                        <button onClick={() => setShowEdit(game)} className="text-gray-600 hover:text-gray-800">
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button onClick={() => toggleFeatured(game.id)} className={game.is_featured ? 'text-yellow-600' : 'text-gray-400'}>
+                          <i className="fas fa-star"></i>
+                        </button>
+                        <button onClick={() => toggleActive(game.id)} className={game.is_active ? 'text-green-600' : 'text-gray-400'}>
+                          <i className="fas fa-power-off"></i>
+                        </button>
+                        <button onClick={() => deleteGame(game.id)} className="text-red-600 hover:text-red-800">
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {pagination.pages > 1 && (
+            <div className="flex justify-center mt-4 gap-2">
+              {Array.from({ length: pagination.pages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-3 py-1 rounded ${page === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {showUpload && <GameUploadModal onClose={() => setShowUpload(false)} onSuccess={() => { setShowUpload(false); loadGames(); }} />}
+          {showEdit && <GameEditModal game={showEdit} onClose={() => setShowEdit(null)} onSuccess={() => { setShowEdit(null); loadGames(); }} />}
+          {showPreview && <GamePreviewModal game={showPreview} onClose={() => setShowPreview(null)} />}
+        </div>
+      );
+    }
+
+    // Game Upload Modal
+    function GameUploadModal({ onClose, onSuccess }) {
+      const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        category: 'casual',
+        difficulty: 'medium',
+        tags: '',
+        controls: '',
+        requirements: ''
+      });
+      const [file, setFile] = useState(null);
+      const [thumbnail, setThumbnail] = useState(null);
+      const [thumbnailUrl, setThumbnailUrl] = useState('');
+      const [loading, setLoading] = useState(false);
+      const toast = useContext(ToastContext);
+
+      const handleThumbnailUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('thumbnail', file);
+
+        try {
+          const { url } = await api.request('/admin/games/thumbnail', {
+            method: 'POST',
+            body: formData
+          });
+          setThumbnailUrl(url);
+          toast.show('Thumbnail uploaded', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!file) {
+          toast.show('Please select a game file', 'error');
+          return;
+        }
+
+        setLoading(true);
+        const data = new FormData();
+        data.append('game', file);
+        data.append('title', formData.title);
+        data.append('description', formData.description);
+        data.append('category', formData.category);
+        data.append('difficulty', formData.difficulty);
+        data.append('tags', JSON.stringify(formData.tags.split(',').map(t => t.trim()).filter(t => t)));
+        data.append('controls', formData.controls);
+        data.append('requirements', formData.requirements);
+        if (thumbnailUrl) data.append('thumbnail', thumbnailUrl);
+
+        try {
+          await api.request('/admin/games/upload', {
+            method: 'POST',
+            body: data
+          });
+          toast.show('Game uploaded successfully', 'success');
+          onSuccess();
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <Modal title="Upload Game" onClose={onClose}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Game File (ZIP or HTML)</label>
+              <input
+                type="file"
+                accept=".zip,.html,.htm"
+                onChange={(e) => setFile(e.target.files[0])}
+                className="w-full p-2 border rounded"
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload a ZIP file containing your HTML5 game or a single HTML file</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Thumbnail</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailUpload}
+                className="w-full p-2 border rounded"
+              />
+              {thumbnailUrl && <img src={thumbnailUrl} alt="Thumbnail" className="mt-2 h-20 rounded" />}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Title *</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Description *</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="w-full p-2 border rounded"
+                rows={3}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full p-2 border rounded"
+                >
+                  {['action', 'puzzle', 'adventure', 'strategy', 'casual', 'arcade', 'racing', 'sports', 'other'].map(c => (
+                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Difficulty</label>
+                <select
+                  value={formData.difficulty}
+                  onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+              <input
+                type="text"
+                value={formData.tags}
+                onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                className="w-full p-2 border rounded"
+                placeholder="fun, multiplayer, 2d"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Controls</label>
+              <input
+                type="text"
+                value={formData.controls}
+                onChange={(e) => setFormData({...formData, controls: e.target.value})}
+                className="w-full p-2 border rounded"
+                placeholder="Arrow keys to move, Space to jump"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+            >
+              {loading ? 'Uploading...' : 'Upload Game'}
+            </button>
+          </form>
+        </Modal>
+      );
+    }
+
+    // Game Edit Modal
+    function GameEditModal({ game, onClose, onSuccess }) {
+      const [formData, setFormData] = useState({
+        title: game.title,
+        description: game.description,
+        category: game.category,
+        difficulty: game.difficulty,
+        thumbnail: game.thumbnail,
+        controls: game.controls || '',
+        requirements: game.requirements || ''
+      });
+      const [loading, setLoading] = useState(false);
+      const toast = useContext(ToastContext);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+          await api.request(`/admin/games/${game.id}`, {
+            method: 'PUT',
+            body: formData
+          });
+          toast.show('Game updated', 'success');
+          onSuccess();
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <Modal title="Edit Game" onClose={onClose}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Title</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="w-full p-2 border rounded"
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Thumbnail URL</label>
+              <input
+                type="text"
+                value={formData.thumbnail}
+                onChange={(e) => setFormData({...formData, thumbnail: e.target.value})}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full p-2 border rounded"
+                >
+                  {['action', 'puzzle', 'adventure', 'strategy', 'casual', 'arcade', 'racing', 'sports', 'other'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Difficulty</label>
+                <select
+                  value={formData.difficulty}
+                  onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Controls</label>
+              <input
+                type="text"
+                value={formData.controls}
+                onChange={(e) => setFormData({...formData, controls: e.target.value})}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </form>
+        </Modal>
+      );
+    }
+
+    // Game Preview Modal
+    function GamePreviewModal({ game, onClose }) {
+      return (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-bold">{game.title}</h2>
+              <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            <div className="p-4">
+              <iframe
+                src={game.game_url}
+                className="game-preview rounded"
+                title={game.title}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Users Component
+    function Users() {
+      const [users, setUsers] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [search, setSearch] = useState('');
+      const [page, setPage] = useState(1);
+      const [pagination, setPagination] = useState({});
+      const toast = useContext(ToastContext);
+
+      useEffect(() => {
+        loadUsers();
+      }, [page, search]);
+
+      const loadUsers = async () => {
+        try {
+          const { data, pagination: pag } = await api.request(`/admin/users?page=${page}&limit=10&search=${search}`);
+          setUsers(data);
+          setPagination(pag);
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const toggleRole = async (id, currentRole) => {
+        const newRole = currentRole === 'admin' ? 'user' : 'admin';
+        try {
+          await api.request(`/admin/users/${id}/role`, {
+            method: 'PUT',
+            body: { role: newRole }
+          });
+          loadUsers();
+          toast.show('User role updated', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      const toggleActive = async (id) => {
+        try {
+          await api.request(`/admin/users/${id}/toggle-active`, { method: 'PUT' });
+          loadUsers();
+          toast.show('User status updated', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      const deleteUser = async (id) => {
+        if (!confirm('Delete this user?')) return;
+        try {
+          await api.request(`/admin/users/${id}`, { method: 'DELETE' });
+          loadUsers();
+          toast.show('User deleted', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      if (loading) return <div className="p-8 text-center">Loading...</div>;
+
+      return (
+        <div className="fade-in">
+          <h1 className="text-2xl font-bold mb-6">User Management</h1>
+
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="w-full max-w-md p-2 border rounded-lg"
+            />
+          </div>
+
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">User</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Role</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Games Played</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.id} className="border-t">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        <img src={user.avatar} alt="" className="w-8 h-8 rounded-full mr-2" />
+                        <span className="font-medium">{user.username}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm">{user.email}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded text-xs ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100'}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{user.total_games_played}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded text-xs ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => toggleRole(user.id, user.role)} className="text-purple-600 hover:text-purple-800" title="Toggle Role">
+                          <i className="fas fa-user-shield"></i>
+                        </button>
+                        <button onClick={() => toggleActive(user.id)} className={user.is_active ? 'text-green-600' : 'text-gray-400'} title="Toggle Active">
+                          <i className="fas fa-power-off"></i>
+                        </button>
+                        <button onClick={() => deleteUser(user.id)} className="text-red-600 hover:text-red-800" title="Delete">
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {pagination.pages > 1 && (
+            <div className="flex justify-center mt-4 gap-2">
+              {Array.from({ length: pagination.pages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-3 py-1 rounded ${page === i + 1 ? 'bg-purple-600 text-white' : 'bg-gray-200'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Notifications Component
+    function Notifications() {
+      const [notifications, setNotifications] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [showCreate, setShowCreate] = useState(false);
+      const [editingId, setEditingId] = useState(null);
+      const toast = useContext(ToastContext);
+
+      useEffect(() => {
+        loadNotifications();
+      }, []);
+
+      const loadNotifications = async () => {
+        try {
+          const { data } = await api.request('/admin/notifications');
+          setNotifications(data);
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const toggleActive = async (id) => {
+        try {
+          await api.request(`/admin/notifications/${id}/toggle-active`, { method: 'PUT' });
+          loadNotifications();
+          toast.show('Notification updated', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      const sendPush = async (id) => {
+        try {
+          await api.request(`/admin/notifications/${id}/send-push`, { method: 'POST' });
+          toast.show('Push notification sent', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      const deleteNotification = async (id) => {
+        if (!confirm('Delete this notification?')) return;
+        try {
+          await api.request(`/admin/notifications/${id}`, { method: 'DELETE' });
+          loadNotifications();
+          toast.show('Notification deleted', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        }
+      };
+
+      if (loading) return <div className="p-8 text-center">Loading...</div>;
+
+      return (
+        <div className="fade-in">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Notifications</h1>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+            >
+              <i className="fas fa-plus mr-2"></i>Create Notification
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {notifications.map(notif => (
+              <div key={notif.id} className="bg-white rounded-xl shadow p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        notif.type === 'info' ? 'bg-blue-100 text-blue-800' :
+                        notif.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                        notif.type === 'success' ? 'bg-green-100 text-green-800' :
+                        notif.type === 'error' ? 'bg-red-100 text-red-800' :
+                        'bg-purple-100 text-purple-800'
+                      }`}>
+                        {notif.type}
+                      </span>
+                      <span className={`px-2 py-1 rounded text-xs ${notif.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100'}`}>
+                        {notif.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                      <span className="text-xs text-gray-500">Target: {notif.target_audience}</span>
+                    </div>
+                    <h3 className="font-semibold">{notif.title}</h3>
+                    <p className="text-gray-600 text-sm">{notif.message}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => sendPush(notif.id)} className="text-blue-600 hover:text-blue-800" title="Send Push">
+                      <i className="fas fa-paper-plane"></i>
+                    </button>
+                    <button onClick={() => toggleActive(notif.id)} className={notif.is_active ? 'text-green-600' : 'text-gray-400'}>
+                      <i className="fas fa-power-off"></i>
+                    </button>
+                    <button onClick={() => deleteNotification(notif.id)} className="text-red-600 hover:text-red-800">
+                      <i className="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {showCreate && <NotificationModal onClose={() => setShowCreate(false)} onSuccess={() => { setShowCreate(false); loadNotifications(); }} />}
+        </div>
+      );
+    }
+
+    // Notification Modal
+    function NotificationModal({ onClose, onSuccess }) {
+      const [formData, setFormData] = useState({
+        title: '',
+        message: '',
+        type: 'info',
+        target_audience: 'all',
+        priority: 0,
+        action_url: '',
+        image_url: ''
+      });
+      const [loading, setLoading] = useState(false);
+      const toast = useContext(ToastContext);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+          await api.request('/admin/notifications', {
+            method: 'POST',
+            body: formData
+          });
+          toast.show('Notification created', 'success');
+          onSuccess();
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <Modal title="Create Notification" onClose={onClose}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Title *</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Message *</label>
+              <textarea
+                value={formData.message}
+                onChange={(e) => setFormData({...formData, message: e.target.value})}
+                className="w-full p-2 border rounded"
+                rows={3}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Type</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="info">Info</option>
+                  <option value="warning">Warning</option>
+                  <option value="success">Success</option>
+                  <option value="error">Error</option>
+                  <option value="promotion">Promotion</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Target Audience</label>
+                <select
+                  value={formData.target_audience}
+                  onChange={(e) => setFormData({...formData, target_audience: e.target.value})}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="all">All</option>
+                  <option value="users">Users Only</option>
+                  <option value="admins">Admins Only</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Action URL (optional)</label>
+              <input
+                type="text"
+                value={formData.action_url}
+                onChange={(e) => setFormData({...formData, action_url: e.target.value})}
+                className="w-full p-2 border rounded"
+                placeholder="https://..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Priority</label>
+              <input
+                type="number"
+                value={formData.priority}
+                onChange={(e) => setFormData({...formData, priority: parseInt(e.target.value)})}
+                className="w-full p-2 border rounded"
+                min="0"
+                max="100"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+            >
+              {loading ? 'Creating...' : 'Create Notification'}
+            </button>
+          </form>
+        </Modal>
+      );
+    }
+
+    // Settings Component
+    function Settings() {
+      const [settings, setSettings] = useState({});
+      const [loading, setLoading] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const toast = useContext(ToastContext);
+
+      useEffect(() => {
+        loadSettings();
+      }, []);
+
+      const loadSettings = async () => {
+        try {
+          const { data } = await api.request('/admin/settings/object');
+          setSettings(data);
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleSave = async () => {
+        setSaving(true);
+        try {
+          await api.request('/admin/settings', {
+            method: 'PUT',
+            body: settings
+          });
+          toast.show('Settings saved', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      const updateSetting = (key, value) => {
+        setSettings(prev => ({ ...prev, [key]: value }));
+      };
+
+      if (loading) return <div className="p-8 text-center">Loading...</div>;
+
+      return (
+        <div className="fade-in">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">App Settings</h1>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* General Settings */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">General Settings</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">App Name</label>
+                  <input
+                    type="text"
+                    value={settings.app_name || ''}
+                    onChange={(e) => updateSetting('app_name', e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">App Description</label>
+                  <textarea
+                    value={settings.app_description || ''}
+                    onChange={(e) => updateSetting('app_description', e.target.value)}
+                    className="w-full p-2 border rounded"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">App Version</label>
+                  <input
+                    type="text"
+                    value={settings.app_version || ''}
+                    onChange={(e) => updateSetting('app_version', e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={settings.maintenance_mode || false}
+                    onChange={(e) => updateSetting('maintenance_mode', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label className="text-sm font-medium">Maintenance Mode</label>
+                </div>
+              </div>
+            </div>
+
+            {/* OneSignal Settings */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">
+                <i className="fas fa-bell mr-2 text-purple-600"></i>
+                OneSignal Push Notifications
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center mb-4">
+                  <input
+                    type="checkbox"
+                    checked={settings.onesignal_enabled || false}
+                    onChange={(e) => updateSetting('onesignal_enabled', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label className="text-sm font-medium">Enable OneSignal</label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">OneSignal App ID</label>
+                  <input
+                    type="text"
+                    value={settings.onesignal_app_id || ''}
+                    onChange={(e) => updateSetting('onesignal_app_id', e.target.value)}
+                    className="w-full p-2 border rounded"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">OneSignal REST API Key</label>
+                  <input
+                    type="password"
+                    value={settings.onesignal_api_key || ''}
+                    onChange={(e) => updateSetting('onesignal_api_key', e.target.value)}
+                    className="w-full p-2 border rounded"
+                    placeholder="Your REST API Key"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Game Settings */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Game Settings</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Max Upload Size (MB)</label>
+                  <input
+                    type="number"
+                    value={settings.max_upload_size || 100}
+                    onChange={(e) => updateSetting('max_upload_size', parseInt(e.target.value))}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Featured Games Count</label>
+                  <input
+                    type="number"
+                    value={settings.featured_games_count || 10}
+                    onChange={(e) => updateSetting('featured_games_count', parseInt(e.target.value))}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Settings */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Contact & Legal</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Support Email</label>
+                  <input
+                    type="email"
+                    value={settings.support_email || ''}
+                    onChange={(e) => updateSetting('support_email', e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Privacy Policy URL</label>
+                  <input
+                    type="text"
+                    value={settings.privacy_policy_url || ''}
+                    onChange={(e) => updateSetting('privacy_policy_url', e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Terms of Service URL</label>
+                  <input
+                    type="text"
+                    value={settings.terms_url || ''}
+                    onChange={(e) => updateSetting('terms_url', e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Environment Component
+    function Environment() {
+      const [envContent, setEnvContent] = useState('');
+      const [envVars, setEnvVars] = useState({});
+      const [loading, setLoading] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const [viewMode, setViewMode] = useState('form'); // 'form' or 'raw'
+      const toast = useContext(ToastContext);
+
+      useEffect(() => {
+        loadEnv();
+      }, []);
+
+      const loadEnv = async () => {
+        try {
+          const { data } = await api.request('/admin/env');
+          setEnvContent(data.raw);
+          setEnvVars(data.parsed);
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleSave = async () => {
+        setSaving(true);
+        try {
+          if (viewMode === 'raw') {
+            await api.request('/admin/env', {
+              method: 'PUT',
+              body: { content: envContent }
+            });
+          } else {
+            await api.request('/admin/env', {
+              method: 'PUT',
+              body: { vars: envVars }
+            });
+          }
+          toast.show('Environment file saved. Restart server for changes to take effect.', 'success');
+        } catch (err) {
+          toast.show(err.message, 'error');
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      const updateVar = (key, value) => {
+        setEnvVars(prev => ({ ...prev, [key]: value }));
+      };
+
+      const addVar = () => {
+        const key = prompt('Enter variable name:');
+        if (key) {
+          setEnvVars(prev => ({ ...prev, [key]: '' }));
+        }
+      };
+
+      const deleteVar = (key) => {
+        if (confirm(`Delete ${key}?`)) {
+          const newVars = { ...envVars };
+          delete newVars[key];
+          setEnvVars(newVars);
+        }
+      };
+
+      if (loading) return <div className="p-8 text-center">Loading...</div>;
+
+      return (
+        <div className="fade-in">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Environment Variables</h1>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode(viewMode === 'form' ? 'raw' : 'form')}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+              >
+                {viewMode === 'form' ? 'Raw Editor' : 'Form Editor'}
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-800">
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              <strong>Warning:</strong> Modifying environment variables requires a server restart. Be careful with sensitive values.
+            </p>
+          </div>
+
+          {viewMode === 'form' ? (
+            <div className="bg-white rounded-xl shadow p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Variables</h2>
+                <button onClick={addVar} className="text-purple-600 hover:text-purple-800">
+                  <i className="fas fa-plus mr-1"></i> Add Variable
+                </button>
+              </div>
+              <div className="space-y-3">
+                {Object.entries(envVars).map(([key, value]) => (
+                  <div key={key} className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={key}
+                      disabled
+                      className="w-1/3 p-2 border rounded bg-gray-50"
+                    />
+                    <input
+                      type={key.toLowerCase().includes('password') || key.toLowerCase().includes('secret') || key.toLowerCase().includes('key') ? 'password' : 'text'}
+                      value={value}
+                      onChange={(e) => updateVar(key, e.target.value)}
+                      className="flex-1 p-2 border rounded"
+                    />
+                    <button onClick={() => deleteVar(key)} className="text-red-600 hover:text-red-800 p-2">
+                      <i className="fas fa-trash"></i>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Raw .env Content</h2>
+              <textarea
+                value={envContent}
+                onChange={(e) => setEnvContent(e.target.value)}
+                className="w-full h-96 p-4 border rounded font-mono text-sm"
+                placeholder="KEY=value"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Modal Component
+    function Modal({ title, children, onClose }) {
+      return (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white">
+              <h2 className="text-xl font-bold">{title}</h2>
+              <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="p-4">
+              {children}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Main App
+    function App() {
+      const [user, setUser] = useState(null);
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+      const [toast, setToast] = useState(null);
+      const [checkingAuth, setCheckingAuth] = useState(true);
+
+      useEffect(() => {
+        checkAuth();
+      }, []);
+
+      const checkAuth = async () => {
+        const token = localStorage.getItem('adminToken');
+        if (token) {
+          api.setToken(token);
+          try {
+            const { user } = await api.request('/auth/me');
+            if (user.role === 'admin') {
+              setUser(user);
+            } else {
+              api.setToken(null);
+            }
+          } catch (err) {
+            api.setToken(null);
+          }
+        }
+        setCheckingAuth(false);
+      };
+
+      const showToast = (message, type = 'info') => {
+        setToast({ message, type });
+      };
+
+      const hideToast = () => setToast(null);
+
+      const handleLogout = () => {
+        api.setToken(null);
+        setUser(null);
+      };
+
+      if (checkingAuth) {
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-xl">Loading...</div>
+          </div>
+        );
+      }
+
+      if (!user) {
+        return (
+          <ToastContext.Provider value={{ show: showToast }}>
+            <Login onLogin={setUser} />
+            {toast && <Toast {...toast} onClose={hideToast} />}
+          </ToastContext.Provider>
+        );
+      }
+
+      const renderContent = () => {
+        switch (activeTab) {
+          case 'dashboard': return <Dashboard />;
+          case 'games': return <Games />;
+          case 'users': return <Users />;
+          case 'notifications': return <Notifications />;
+          case 'settings': return <Settings />;
+          case 'env': return <Environment />;
+          default: return <Dashboard />;
+        }
+      };
+
+      return (
+        <ToastContext.Provider value={{ show: showToast }}>
+          <div className="min-h-screen bg-gray-100">
+            <Sidebar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              collapsed={sidebarCollapsed}
+              setCollapsed={setSidebarCollapsed}
+            />
+
+            <div className={`${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all`}>
+              {/* Header */}
+              <header className="bg-white shadow-sm p-4 flex justify-between items-center">
+                <h1 className="text-xl font-semibold capitalize">{activeTab}</h1>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">
+                    Welcome, <strong>{user.username}</strong>
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <i className="fas fa-sign-out-alt mr-1"></i> Logout
+                  </button>
+                </div>
+              </header>
+
+              {/* Main Content */}
+              <main className="p-6">
+                {renderContent()}
+              </main>
+            </div>
+          </div>
+
+          {toast && <Toast {...toast} onClose={hideToast} />}
+        </ToastContext.Provider>
+      );
+    }
+
+    // Render
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
