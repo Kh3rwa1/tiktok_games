@@ -34,6 +34,7 @@ export interface PremiumGameCardProps {
   showLikeButton?: boolean;
   showStats?: boolean;
   style?: any;
+  fullScreen?: boolean;
 }
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -47,6 +48,7 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
   showLikeButton = true,
   showStats = true,
   style,
+  fullScreen = false,
 }) => {
   // Animation values
   const scale = useSharedValue(1);
@@ -142,7 +144,12 @@ export const PremiumGameCard: React.FC<PremiumGameCardProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
-      style={[styles.container, cardAnimatedStyle, style]}
+      style={[
+        styles.container,
+        fullScreen && styles.containerFullScreen,
+        cardAnimatedStyle,
+        style,
+      ]}
     >
       <View style={styles.card}>
         {/* Image Container with Gradient Overlay */}
@@ -264,6 +271,11 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     marginVertical: 8,
+  },
+  containerFullScreen: {
+    width: '100%',
+    height: '100%',
+    marginVertical: 0,
   },
   card: {
     flex: 1,
