@@ -82,24 +82,58 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
   },
 
   toggleLike: async (gameId: string) => {
-    try {
-      const user = useAuthStore.getState().user;
-      if (!user) throw new Error('Must be logged in to like games');
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error('Must be logged in to like games');
 
+    const { games, currentGame, feed } = get();
+    const userId = String(user.id);
+
+    // Store original state for rollback
+    const originalGames = games;
+    const originalCurrentGame = currentGame;
+    const originalFeed = feed;
+
+    // Optimistic update
+    const updateGameLikes = (game: Game, optimistic: boolean) => {
+      if (game.id === gameId) {
+        const isLiked = game.likedBy?.includes(userId);
+        return {
+          ...game,
+          likedBy: isLiked
+            ? game.likedBy.filter(id => id !== userId)
+            : [...(game.likedBy || []), userId],
+          stats: {
+            ...game.stats,
+            likes: optimistic
+              ? (isLiked ? Math.max(0, game.stats.likes - 1) : game.stats.likes + 1)
+              : game.stats.likes
+          }
+        };
+      }
+      return game;
+    };
+
+    // Apply optimistic update
+    if (currentGame?.id === gameId) {
+      set({ currentGame: updateGameLikes(currentGame, true) });
+    }
+    set({
+      games: games.map(g => updateGameLikes(g, true)),
+      feed: feed.map(g => updateGameLikes(g, true))
+    });
+
+    try {
       const result = await api.toggleLike(gameId);
 
-      // Update local state
-      const { games, currentGame, feed } = get();
-
-      const updateGameLikes = (game: Game) => {
+      // Update with actual server response
+      const updateWithResult = (game: Game) => {
         if (game.id === gameId) {
-          const userId = String(user.id);
-          const isLiked = game.likedBy?.includes(userId);
+          const isNowLiked = result.liked;
           return {
             ...game,
-            likedBy: isLiked
-              ? game.likedBy.filter(id => id !== userId)
-              : [...(game.likedBy || []), userId],
+            likedBy: isNowLiked
+              ? [...(game.likedBy || []).filter(id => id !== userId), userId]
+              : (game.likedBy || []).filter(id => id !== userId),
             stats: {
               ...game.stats,
               likes: result.likes
@@ -109,31 +143,67 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
         return game;
       };
 
-      if (currentGame?.id === gameId) {
-        set({ currentGame: updateGameLikes(currentGame) });
+      const { games: currentGames, currentGame: currentCurrentGame, feed: currentFeed } = get();
+
+      if (currentCurrentGame?.id === gameId) {
+        set({ currentGame: updateWithResult(currentCurrentGame) });
       }
 
       set({
-        games: games.map(updateGameLikes),
-        feed: feed.map(updateGameLikes)
+        games: currentGames.map(updateWithResult),
+        feed: currentFeed.map(updateWithResult),
+        error: null
       });
     } catch (error: any) {
       console.error('Toggle like error:', error);
-      set({ error: error.message || 'Failed to toggle like' });
+
+      // Rollback to original state
+      set({
+        games: originalGames,
+        currentGame: originalCurrentGame,
+        feed: originalFeed,
+        error: error.message || 'Failed to toggle like'
+      });
       throw error;
     }
   },
 
   rateGame: async (gameId: string, rating: number) => {
-    try {
-      const user = useAuthStore.getState().user;
-      if (!user) throw new Error('Must be logged in to rate games');
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error('Must be logged in to rate games');
 
+    const { games, currentGame, feed } = get();
+
+    // Store original state for rollback
+    const originalGames = games;
+    const originalCurrentGame = currentGame;
+    const originalFeed = feed;
+
+    // Optimistic update - estimate new rating
+    const updateGameRatingOptimistic = (game: Game) => {
+      if (game.id === gameId) {
+        // Simple optimistic update - actual value will come from server
+        return {
+          ...game,
+          averageRating: rating // Temporarily show user's rating
+        };
+      }
+      return game;
+    };
+
+    // Apply optimistic update
+    if (currentGame?.id === gameId) {
+      set({ currentGame: updateGameRatingOptimistic(currentGame) });
+    }
+    set({
+      games: games.map(updateGameRatingOptimistic),
+      feed: feed.map(updateGameRatingOptimistic)
+    });
+
+    try {
       const result = await api.rateGame(gameId, rating);
 
-      // Update local state
-      const { games, currentGame, feed } = get();
-
+      // Update with actual server response
       const updateGameRating = (game: Game) => {
         if (game.id === gameId) {
           return {
@@ -144,17 +214,27 @@ export const useGameStore = create<ExtendedGameState>((set, get) => ({
         return game;
       };
 
-      if (currentGame?.id === gameId) {
-        set({ currentGame: updateGameRating(currentGame) });
+      const { games: currentGames, currentGame: currentCurrentGame, feed: currentFeed } = get();
+
+      if (currentCurrentGame?.id === gameId) {
+        set({ currentGame: updateGameRating(currentCurrentGame) });
       }
 
       set({
-        games: games.map(updateGameRating),
-        feed: feed.map(updateGameRating)
+        games: currentGames.map(updateGameRating),
+        feed: currentFeed.map(updateGameRating),
+        error: null
       });
     } catch (error: any) {
       console.error('Rate game error:', error);
-      set({ error: error.message || 'Failed to rate game' });
+
+      // Rollback to original state
+      set({
+        games: originalGames,
+        currentGame: originalCurrentGame,
+        feed: originalFeed,
+        error: error.message || 'Failed to rate game'
+      });
       throw error;
     }
   },

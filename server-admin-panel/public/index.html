@@ -968,7 +968,99 @@
       notifications: [],
       settings: {},
       loading: false,
-      errors: {}
+      errors: {},
+      lastSync: null,
+      syncInterval: null,
+      isOnline: navigator.onLine
+    };
+
+    // ==================== AUTO-SYNC SYSTEM ====================
+    const SYNC_INTERVAL = 30000; // 30 seconds
+
+    const startAutoSync = () => {
+      if (state.syncInterval) return;
+
+      state.syncInterval = setInterval(async () => {
+        if (!state.token || !state.user) return;
+
+        try {
+          // Silently refresh current page data
+          await refreshCurrentPageData();
+        } catch (error) {
+          console.log('Auto-sync failed:', error.message);
+        }
+      }, SYNC_INTERVAL);
+
+      // Listen for online/offline events
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+    };
+
+    const stopAutoSync = () => {
+      if (state.syncInterval) {
+        clearInterval(state.syncInterval);
+        state.syncInterval = null;
+      }
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+
+    const handleOnline = () => {
+      state.isOnline = true;
+      showToast('Connection restored', 'success');
+      refreshCurrentPageData();
+    };
+
+    const handleOffline = () => {
+      state.isOnline = false;
+      showToast('You are offline', 'error');
+    };
+
+    const refreshCurrentPageData = async () => {
+      if (!state.isOnline) return;
+
+      // Don't set loading state for background sync
+      try {
+        switch (state.currentPage) {
+          case 'dashboard':
+            const statsData = await api('/admin/stats');
+            if (JSON.stringify(state.stats) !== JSON.stringify(statsData.data)) {
+              state.stats = statsData.data;
+              state.lastSync = new Date().toISOString();
+              render();
+            }
+            break;
+          case 'users':
+            const search = document.getElementById('userSearch')?.value || '';
+            const usersData = await api(`/admin/users?search=${encodeURIComponent(search)}`);
+            if (JSON.stringify(state.users) !== JSON.stringify(usersData.data)) {
+              state.users = usersData.data || [];
+              state.lastSync = new Date().toISOString();
+              render();
+            }
+            break;
+          case 'games':
+            const gameSearch = document.getElementById('gameSearch')?.value || '';
+            const gamesData = await api(`/admin/games?search=${encodeURIComponent(gameSearch)}`);
+            if (JSON.stringify(state.games) !== JSON.stringify(gamesData.data)) {
+              state.games = gamesData.data || [];
+              state.lastSync = new Date().toISOString();
+              render();
+            }
+            break;
+          case 'notifications':
+            const notifsData = await api('/admin/notifications');
+            if (JSON.stringify(state.notifications) !== JSON.stringify(notifsData.data)) {
+              state.notifications = notifsData.data || [];
+              state.lastSync = new Date().toISOString();
+              render();
+            }
+            break;
+        }
+      } catch (error) {
+        // Silent fail for background sync
+        console.log('Background sync error:', error.message);
+      }
     };
 
     // ==================== API LAYER ====================
@@ -1681,6 +1773,7 @@
         state.token = data.data.token;
         state.user = data.data;
         localStorage.setItem('adminToken', data.data.token);
+        startAutoSync(); // Start auto-sync after login
         showToast('Login successful!', 'success');
         render();
       } catch (error) {
@@ -1689,6 +1782,7 @@
     };
 
     const handleLogout = () => {
+      stopAutoSync();
       state.token = null;
       state.user = null;
       state.stats = null;
@@ -1696,6 +1790,7 @@
       state.games = [];
       state.notifications = [];
       state.settings = {};
+      state.lastSync = null;
       localStorage.removeItem('adminToken');
       render();
     };
@@ -2248,6 +2343,7 @@
             return;
           }
           state.user = data.data;
+          startAutoSync(); // Start auto-sync after successful auth
         } catch (error) {
           handleLogout();
         }
@@ -2257,6 +2353,9 @@
 
     // Start the app
     init();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', stopAutoSync);
   </script>
 </body>
 </html>
