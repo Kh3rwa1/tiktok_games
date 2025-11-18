@@ -150,13 +150,14 @@ const AnimatedGameItem = React.memo(({
 });
 
 export default function HomeScreen({ navigation }: Props) {
-  const { games, isLoading, error, fetchGames } = useGameStore();
+  const { feed, isLoading, error, fetchFeed, feedType, setFeedType, hasMoreFeed } = useGameStore();
   const [refreshing, setRefreshing] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+
+  // Use feed instead of games for TikTok-style experience
+  const games = feed;
 
   // Animation values
   const scrollY = useSharedValue(0);
@@ -193,21 +194,14 @@ export default function HomeScreen({ navigation }: Props) {
   });
 
   useEffect(() => {
-    loadInitialGames();
+    loadInitialFeed();
   }, []);
 
-  const loadInitialGames = async () => {
+  const loadInitialFeed = async () => {
     try {
-      await fetchGames({
-        page: 1,
-        limit: 10,
-        sortBy: 'popular',
-        order: 'desc',
-      });
-      setCurrentPage(1);
-      setHasMore(true);
+      await fetchFeed(true);
     } catch (err: any) {
-      console.error('Error loading games:', err);
+      console.error('Error loading feed:', err);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -229,14 +223,7 @@ export default function HomeScreen({ navigation }: Props) {
     );
 
     try {
-      await fetchGames({
-        page: 1,
-        limit: 10,
-        sortBy: 'popular',
-        order: 'desc',
-      });
-      setCurrentPage(1);
-      setHasMore(true);
+      await fetchFeed(true);
 
       triggerSuccess();
       Toast.show({
@@ -260,29 +247,23 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   const loadMoreGames = async () => {
-    if (loadingMore || !hasMore || isLoading) return;
+    if (loadingMore || !hasMoreFeed || isLoading) return;
 
     setLoadingMore(true);
-    const nextPage = currentPage + 1;
 
     try {
-      await fetchGames({
-        page: nextPage,
-        limit: 10,
-        sortBy: 'popular',
-        order: 'desc',
-      });
-
-      if (games.length < nextPage * 10) {
-        setHasMore(false);
-      }
-
-      setCurrentPage(nextPage);
+      await fetchFeed(false);
     } catch (err) {
       console.error('Error loading more games:', err);
     } finally {
       setLoadingMore(false);
     }
+  };
+
+  const handleFeedTypeChange = (type: 'foryou' | 'following') => {
+    triggerMedium();
+    setFeedType(type);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
   const handleGamePress = useCallback((game: Game) => {
@@ -367,7 +348,7 @@ export default function HomeScreen({ navigation }: Props) {
         <Animated.View entering={FadeInUp.delay(400).springify()}>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={loadInitialGames}
+            onPress={loadInitialFeed}
             activeOpacity={0.8}
           >
             <LinearGradient
@@ -405,25 +386,26 @@ export default function HomeScreen({ navigation }: Props) {
             style={styles.headerGradient}
           >
             <View style={styles.headerContent}>
-              <Animated.View
-                style={styles.logoContainer}
-                entering={SlideInRight.springify()}
-              >
-                <LinearGradient
-                  colors={['#FF0050', '#FF4500']}
-                  style={styles.logoGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
+              {/* Feed Type Tabs - TikTok Style */}
+              <View style={styles.feedTabs}>
+                <TouchableOpacity
+                  style={[styles.feedTab, feedType === 'following' && styles.feedTabActive]}
+                  onPress={() => handleFeedTypeChange('following')}
                 >
-                  <Ionicons name="game-controller" size={24} color="#fff" />
-                </LinearGradient>
-                <View>
-                  <Text style={styles.headerTitle}>TikTok Games</Text>
-                  <Text style={styles.headerSubtitle}>
-                    {games.length} Games Available
+                  <Text style={[styles.feedTabText, feedType === 'following' && styles.feedTabTextActive]}>
+                    Following
                   </Text>
-                </View>
-              </Animated.View>
+                </TouchableOpacity>
+                <View style={styles.feedTabDivider} />
+                <TouchableOpacity
+                  style={[styles.feedTab, feedType === 'foryou' && styles.feedTabActive]}
+                  onPress={() => handleFeedTypeChange('foryou')}
+                >
+                  <Text style={[styles.feedTabText, feedType === 'foryou' && styles.feedTabTextActive]}>
+                    For You
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               {/* Notification Bell */}
               <TouchableOpacity
@@ -548,34 +530,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
   },
-  logoContainer: {
+  feedTabs: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logoGradient: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    shadowColor: '#FF0050',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
+  feedTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 12,
+  feedTabActive: {},
+  feedTabText: {
+    fontSize: 17,
     fontWeight: '500',
-    color: '#888',
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  feedTabTextActive: {
+    fontWeight: '700',
+    color: '#fff',
+  },
+  feedTabDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginHorizontal: 4,
   },
   notificationButton: {
     position: 'relative',

@@ -1,15 +1,12 @@
+/**
+ * Auth Store - Unified API-based authentication
+ * Uses server JWT authentication instead of Firebase
+ */
+
 import { create } from 'zustand';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  updateProfile
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
-import { User, AuthState } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User, AuthState } from '../types';
+import api from '../services/api';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -19,41 +16,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setUser: (user: User | null) => set({ user }),
 
-  setToken: (token: string | null) => set({ token }),
+  setToken: (token: string | null) => {
+    api.setToken(token);
+    set({ token });
+  },
 
   signIn: async (email: string, password: string) => {
     try {
       set({ isLoading: true, error: null });
 
-      // Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
+      const { user, token } = await api.login(email, password);
 
-      // Get ID token
-      const token = await firebaseUser.getIdToken();
+      // Transform server user to app user format
+      const appUser: User = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar || 'https://via.placeholder.com/150',
+        bio: user.bio || '',
+        role: user.role,
+        followers_count: user.followers_count || 0,
+        following_count: user.following_count || 0,
+        games_count: user.games_count || 0,
+        total_games_played: user.total_games_played || 0,
+        total_play_time: user.total_play_time || 0,
+        created_at: user.created_at,
+      };
 
-      // Get user data from Firestore
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      api.setToken(token);
 
-      if (userDoc.exists()) {
-        const userData = {
-          id: firebaseUser.uid,
-          uid: firebaseUser.uid,
-          ...userDoc.data()
-        } as User;
-
-        // Save token to AsyncStorage
-        await AsyncStorage.setItem('userToken', token);
-
-        set({
-          user: userData,
-          token,
-          isLoading: false,
-          error: null
-        });
-      } else {
-        throw new Error('User data not found in Firestore');
-      }
+      set({
+        user: appUser,
+        token,
+        isLoading: false,
+        error: null
+      });
     } catch (error: any) {
       console.error('Sign in error:', error);
       set({
@@ -68,50 +65,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // Create user with Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
+      const { user, token } = await api.register(username, email, password);
 
-      // Update Firebase Auth profile
-      await updateProfile(firebaseUser, {
-        displayName: username,
-        photoURL: 'https://via.placeholder.com/150'
-      });
-
-      // Create user document in Firestore
-      const userData: Partial<User> = {
-        uid: firebaseUser.uid,
-        username,
-        email: email.toLowerCase(),
-        avatar: 'https://via.placeholder.com/150',
-        bio: '',
-        favoriteGames: [],
-        playHistory: [],
-        stats: {
-          totalGamesPlayed: 0,
-          totalPlayTime: 0
-        },
-        isActive: true,
-        role: 'user',
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // Transform server user to app user format
+      const appUser: User = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar || 'https://via.placeholder.com/150',
+        bio: user.bio || '',
+        role: user.role,
+        followers_count: 0,
+        following_count: 0,
+        games_count: 0,
+        total_games_played: 0,
+        total_play_time: 0,
+        created_at: user.created_at,
       };
 
-      await setDoc(doc(db, 'users', firebaseUser.uid), userData);
-
-      // Get ID token
-      const token = await firebaseUser.getIdToken();
-
-      // Save token to AsyncStorage
-      await AsyncStorage.setItem('userToken', token);
-
-      const fullUserData = {
-        id: firebaseUser.uid,
-        ...userData
-      } as User;
+      api.setToken(token);
 
       set({
-        user: fullUserData,
+        user: appUser,
         token,
         isLoading: false,
         error: null
@@ -130,11 +105,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // Sign out from Firebase
-      await firebaseSignOut(auth);
-
-      // Remove token from AsyncStorage
-      await AsyncStorage.removeItem('userToken');
+      await api.logout();
 
       set({
         user: null,
@@ -159,30 +130,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ isLoading: true, error: null });
 
-      // Update Firestore
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        ...updates,
-        updatedAt: new Date()
-      });
+      const updatedUser = await api.updateProfile(updates);
 
-      // Update Firebase Auth profile if needed
-      if (updates.username || updates.avatar) {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          await updateProfile(currentUser, {
-            displayName: updates.username || currentUser.displayName,
-            photoURL: updates.avatar || currentUser.photoURL
-          });
-        }
-      }
-
-      // Update local state
       set({
         user: {
           ...user,
-          ...updates,
-          updatedAt: new Date()
+          ...updatedUser,
         },
         isLoading: false,
         error: null
@@ -198,43 +151,63 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   }
 }));
 
-// Initialize auth state listener
-onAuthStateChanged(auth, async (firebaseUser) => {
-  if (firebaseUser) {
-    try {
-      // Get user data from Firestore
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+// Initialize auth state on app start
+const initializeAuth = async () => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
 
-      if (userDoc.exists()) {
-        const userData = {
-          id: firebaseUser.uid,
-          uid: firebaseUser.uid,
-          ...userDoc.data()
-        } as User;
+    if (token) {
+      api.setToken(token);
 
-        // Get fresh token
-        const token = await firebaseUser.getIdToken();
-        await AsyncStorage.setItem('userToken', token);
+      try {
+        const user = await api.getMe();
+
+        const appUser: User = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar || 'https://via.placeholder.com/150',
+          bio: user.bio || '',
+          role: user.role,
+          followers_count: user.followers_count || 0,
+          following_count: user.following_count || 0,
+          games_count: user.games_count || 0,
+          total_games_played: user.total_games_played || 0,
+          total_play_time: user.total_play_time || 0,
+          created_at: user.created_at,
+        };
 
         useAuthStore.setState({
-          user: userData,
+          user: appUser,
           token,
           isLoading: false
         });
+      } catch (error) {
+        // Token is invalid, clear it
+        await AsyncStorage.removeItem('userToken');
+        api.setToken(null);
+        useAuthStore.setState({
+          user: null,
+          token: null,
+          isLoading: false
+        });
       }
-    } catch (error) {
-      console.error('Error loading user:', error);
+    } else {
       useAuthStore.setState({
         user: null,
         token: null,
         isLoading: false
       });
     }
-  } else {
+  } catch (error) {
+    console.error('Error initializing auth:', error);
     useAuthStore.setState({
       user: null,
       token: null,
       isLoading: false
     });
   }
-});
+};
+
+// Run initialization
+initializeAuth();
