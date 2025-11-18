@@ -1,6 +1,13 @@
-const User = require('../models/firestore/User');
-const { admin } = require('../config/firebase');
+const User = require('../models/mysql/User');
+const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
+
+// Generate JWT token
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '30d'
+  });
+};
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -30,7 +37,7 @@ const register = async (req, res) => {
       });
     }
 
-    // Create user in Firebase Auth and Firestore
+    // Create user
     const user = await User.create({
       username,
       email,
@@ -39,8 +46,8 @@ const register = async (req, res) => {
       bio
     });
 
-    // Generate custom token for the user
-    const customToken = await admin.auth().createCustomToken(user.id);
+    // Generate token
+    const token = generateToken(user.id);
 
     res.status(201).json({
       success: true,
@@ -49,7 +56,7 @@ const register = async (req, res) => {
         username: user.username,
         email: user.email,
         avatar: user.avatar,
-        token: customToken
+        token
       }
     });
   } catch (error) {
@@ -58,33 +65,39 @@ const register = async (req, res) => {
   }
 };
 
-// @desc    Login user (verify Firebase token)
+// @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
 const login = async (req, res) => {
   try {
-    const { idToken } = req.body;
-
-    // Validate input
-    if (!idToken) {
-      return res.status(400).json({ message: 'Please provide Firebase ID token' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    // Verify Firebase ID token
-    const decodedToken = await User.verifyToken(idToken);
-    const uid = decodedToken.uid;
+    const { email, password } = req.body;
 
-    // Get user from Firestore
-    const user = await User.findById(uid);
+    // Get user with password
+    const user = await User.findByEmail(email);
 
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isMatch = await User.comparePassword(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Check if account is active
-    if (!user.isActive) {
+    if (!user.is_active) {
       return res.status(401).json({ message: 'Account is inactive' });
     }
+
+    // Generate token
+    const token = generateToken(user.id);
 
     res.json({
       success: true,
@@ -94,8 +107,12 @@ const login = async (req, res) => {
         email: user.email,
         avatar: user.avatar,
         bio: user.bio,
-        stats: user.stats,
-        token: idToken
+        stats: {
+          totalGamesPlayed: user.total_games_played,
+          totalPlayTime: user.total_play_time
+        },
+        role: user.role,
+        token
       }
     });
   } catch (error) {
@@ -109,7 +126,7 @@ const login = async (req, res) => {
 // @access  Private
 const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.uid);
+    const user = await User.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -132,7 +149,7 @@ const updateProfile = async (req, res) => {
   try {
     const { username, bio, avatar } = req.body;
 
-    const user = await User.findById(req.user.uid);
+    const user = await User.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -152,7 +169,7 @@ const updateProfile = async (req, res) => {
     if (bio !== undefined) updates.bio = bio;
     if (avatar) updates.avatar = avatar;
 
-    const updatedUser = await User.update(req.user.uid, updates);
+    const updatedUser = await User.update(req.user.id, updates);
 
     res.json({
       success: true,
@@ -169,7 +186,7 @@ const updateProfile = async (req, res) => {
 // @access  Private
 const changePassword = async (req, res) => {
   try {
-    const { newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
     if (!newPassword) {
       return res.status(400).json({
@@ -183,8 +200,23 @@ const changePassword = async (req, res) => {
       });
     }
 
-    // Update password in Firebase Auth
-    await User.updatePassword(req.user.uid, newPassword);
+    // Get user with password
+    const user = await User.findByIdWithPassword(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password if provided
+    if (currentPassword) {
+      const isMatch = await User.comparePassword(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+    }
+
+    // Update password
+    await User.updatePassword(req.user.id, newPassword);
 
     res.json({
       success: true,

@@ -1,5 +1,5 @@
-const Game = require('../models/firestore/Game');
-const User = require('../models/firestore/User');
+const Game = require('../models/mysql/Game');
+const User = require('../models/mysql/User');
 
 // @desc    Get all games with pagination and filters
 // @route   GET /api/games
@@ -16,7 +16,6 @@ const getGames = async (req, res) => {
       featured
     } = req.query;
 
-    // Build options object
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -25,19 +24,10 @@ const getGames = async (req, res) => {
       isActive: true
     };
 
-    if (category) {
-      options.category = category;
-    }
+    if (category) options.category = category;
+    if (featured === 'true') options.featured = true;
+    if (search) options.search = search;
 
-    if (featured === 'true') {
-      options.featured = true;
-    }
-
-    if (search) {
-      options.search = search;
-    }
-
-    // Get games with pagination
     const result = await Game.findAll(options);
 
     res.json({
@@ -62,21 +52,7 @@ const getGame = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    // Increment view count
     await Game.incrementViews(req.params.id);
-
-    // Get creator info
-    if (game.creatorId) {
-      const creator = await User.findById(game.creatorId);
-      if (creator) {
-        game.creator = {
-          id: creator.id,
-          username: creator.username,
-          avatar: creator.avatar,
-          bio: creator.bio
-        };
-      }
-    }
 
     res.json({
       success: true,
@@ -94,28 +70,14 @@ const getGame = async (req, res) => {
 const createGame = async (req, res) => {
   try {
     const {
-      title,
-      description,
-      thumbnail,
-      gameUrl,
-      category,
-      tags,
-      difficulty,
-      controls,
-      requirements
+      title, description, thumbnail, gameUrl, category,
+      tags, difficulty, controls, requirements
     } = req.body;
 
     const game = await Game.create({
-      title,
-      description,
-      thumbnail,
-      gameUrl,
-      category,
-      tags,
-      difficulty,
-      controls,
-      requirements,
-      creatorId: req.user.uid
+      title, description, thumbnail, gameUrl, category,
+      tags, difficulty, controls, requirements,
+      creatorId: req.user.id
     });
 
     res.status(201).json({
@@ -139,29 +101,14 @@ const updateGame = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    // Check if user is creator or admin
-    if (game.creatorId !== req.user.uid && req.user.role !== 'admin') {
+    if (game.creatorId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to update this game' });
     }
 
-    const allowedUpdates = [
-      'title',
-      'description',
-      'thumbnail',
-      'gameUrl',
-      'category',
-      'tags',
-      'difficulty',
-      'controls',
-      'requirements'
-    ];
-
-    // Build updates object
+    const allowedUpdates = ['title', 'description', 'thumbnail', 'gameUrl', 'category', 'tags', 'difficulty', 'controls', 'requirements'];
     const updates = {};
     allowedUpdates.forEach(field => {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
-      }
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
 
     const updatedGame = await Game.update(req.params.id, updates);
@@ -187,13 +134,11 @@ const deleteGame = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    // Check if user is creator or admin
-    if (game.creatorId !== req.user.uid && req.user.role !== 'admin') {
+    if (game.creatorId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this game' });
     }
 
-    // Soft delete - just mark as inactive
-    await Game.update(req.params.id, { isActive: false });
+    await Game.delete(req.params.id);
 
     res.json({
       success: true,
@@ -216,10 +161,8 @@ const toggleLike = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    const wasLiked = game.likedBy.includes(req.user.uid);
-
-    // Toggle like
-    const updatedGame = await Game.toggleLike(req.params.id, req.user.uid);
+    const wasLiked = await Game.isLikedBy(req.params.id, req.user.id);
+    const updatedGame = await Game.toggleLike(req.params.id, req.user.id);
 
     res.json({
       success: true,
@@ -251,14 +194,13 @@ const rateGame = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    // Add or update rating
-    const updatedGame = await Game.addRating(req.params.id, req.user.uid, rating);
+    const updatedGame = await Game.addRating(req.params.id, req.user.id, rating);
 
     res.json({
       success: true,
       data: {
         averageRating: updatedGame.averageRating,
-        totalRatings: updatedGame.ratings.length
+        userRating: rating
       }
     });
   } catch (error) {
@@ -273,28 +215,14 @@ const rateGame = async (req, res) => {
 const recordPlay = async (req, res) => {
   try {
     const { duration } = req.body;
-
     const game = await Game.findById(req.params.id);
 
     if (!game) {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    // Increment play count
     await Game.incrementPlays(req.params.id);
-
-    // Update average play time if duration provided
-    if (duration) {
-      const updatedGame = await Game.findById(req.params.id);
-      const totalPlayTime = game.stats.averagePlayTime * (game.stats.plays) + duration;
-      const averagePlayTime = Math.round(totalPlayTime / (game.stats.plays + 1));
-      await Game.update(req.params.id, {
-        'stats.averagePlayTime': averagePlayTime
-      });
-    }
-
-    // Add to user's play history
-    await User.addPlayHistory(req.user.uid, {
+    await User.addPlayHistory(req.user.id, {
       gameId: req.params.id,
       duration: duration || 0
     });
