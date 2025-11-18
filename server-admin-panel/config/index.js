@@ -54,7 +54,7 @@ const parseBoolean = (value, defaultValue = false) => {
 /**
  * Parse integer environment variable
  */
-const parseInt = (value, defaultValue) => {
+const parseIntSafe = (value, defaultValue) => {
   const parsed = Number.parseInt(value, 10);
   return isNaN(parsed) ? defaultValue : parsed;
 };
@@ -73,19 +73,19 @@ const parseList = (value, defaultValue = []) => {
 const config = {
   // Server
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT, 5000),
+  port: parseIntSafe(process.env.PORT, 5000),
   domain: process.env.DOMAIN || `http://localhost:${process.env.PORT || 5000}`,
   adminPanelUrl: process.env.ADMIN_PANEL_URL || `http://localhost:${process.env.PORT || 5000}`,
 
   // Database
   database: {
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 3306),
+    port: parseIntSafe(process.env.DB_PORT, 3306),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     name: process.env.DB_NAME,
-    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT, 10),
-    queueLimit: parseInt(process.env.DB_QUEUE_LIMIT, 0),
+    connectionLimit: parseIntSafe(process.env.DB_CONNECTION_LIMIT, 10),
+    queueLimit: parseIntSafe(process.env.DB_QUEUE_LIMIT, 0),
   },
 
   // JWT
@@ -108,11 +108,11 @@ const config = {
 
   // Rate Limiting
   rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 1000),
+    windowMs: parseIntSafe(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+    maxRequests: parseIntSafe(process.env.RATE_LIMIT_MAX_REQUESTS, 1000),
     auth: {
-      windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
-      maxRequests: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS, 50),
+      windowMs: parseIntSafe(process.env.AUTH_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+      maxRequests: parseIntSafe(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS, 50),
     },
   },
 
@@ -130,10 +130,10 @@ const config = {
 
   // File Uploads
   uploads: {
-    maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 100 * 1024 * 1024), // 100MB
-    maxGameZipSize: parseInt(process.env.MAX_GAME_ZIP_SIZE, 100 * 1024 * 1024),
-    maxThumbnailSize: parseInt(process.env.MAX_THUMBNAIL_SIZE, 5 * 1024 * 1024),
-    maxAvatarSize: parseInt(process.env.MAX_AVATAR_SIZE, 2 * 1024 * 1024),
+    maxFileSize: parseIntSafe(process.env.MAX_FILE_SIZE, 100 * 1024 * 1024), // 100MB
+    maxGameZipSize: parseIntSafe(process.env.MAX_GAME_ZIP_SIZE, 100 * 1024 * 1024),
+    maxThumbnailSize: parseIntSafe(process.env.MAX_THUMBNAIL_SIZE, 5 * 1024 * 1024),
+    maxAvatarSize: parseIntSafe(process.env.MAX_AVATAR_SIZE, 2 * 1024 * 1024),
     allowedGameTypes: parseList(process.env.ALLOWED_GAME_TYPES, ['.zip']),
     allowedImageTypes: parseList(process.env.ALLOWED_IMAGE_TYPES, ['.jpg', '.jpeg', '.png', '.gif', '.webp']),
     uploadDir: path.resolve(process.env.UPLOAD_DIR || './public/uploads'),
@@ -151,7 +151,7 @@ const config = {
   // Email
   email: {
     host: process.env.SMTP_HOST || '',
-    port: parseInt(process.env.SMTP_PORT, 587),
+    port: parseIntSafe(process.env.SMTP_PORT, 587),
     secure: parseBoolean(process.env.SMTP_SECURE, false),
     user: process.env.SMTP_USER || '',
     password: process.env.SMTP_PASSWORD || '',
@@ -164,7 +164,7 @@ const config = {
     level: process.env.LOG_LEVEL || 'info',
     file: process.env.LOG_FILE || './logs/server.log',
     maxSize: process.env.LOG_MAX_SIZE || '10m',
-    maxFiles: parseInt(process.env.LOG_MAX_FILES, 5),
+    maxFiles: parseIntSafe(process.env.LOG_MAX_FILES, 5),
   },
 
   // Analytics
@@ -203,7 +203,7 @@ const config = {
     enabled: parseBoolean(process.env.CACHE_ENABLED, false),
     redis: {
       host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT, 6379),
+      port: parseIntSafe(process.env.REDIS_PORT, 6379),
       password: process.env.REDIS_PASSWORD || '',
     },
   },
@@ -218,7 +218,7 @@ const config = {
   backup: {
     enabled: parseBoolean(process.env.BACKUP_ENABLED, false),
     schedule: process.env.BACKUP_SCHEDULE || '0 2 * * *',
-    retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS, 30),
+    retentionDays: parseIntSafe(process.env.BACKUP_RETENTION_DAYS, 30),
   },
 };
 
