@@ -197,7 +197,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #1a0a1f 50%, var(--bg-primary) 100%);
+      background: var(--bg-primary);
       padding: 20px;
       position: relative;
       overflow: hidden;
@@ -1352,11 +1352,19 @@
 
     // ==================== AUTO-SYNC SYSTEM ====================
     const SYNC_INTERVAL = 30000;
+    let lastSyncTime = 0;
 
     const startAutoSync = () => {
       if (state.syncInterval) return;
       state.syncInterval = setInterval(async () => {
         if (!state.token || !state.user) return;
+        if (!state.isOnline) return;
+        if (document.hidden) return; // Don't sync when tab is hidden
+
+        const now = Date.now();
+        if (now - lastSyncTime < 10000) return; // Min 10s between syncs
+        lastSyncTime = now;
+
         try {
           await refreshCurrentPageData();
         } catch (error) {
@@ -1365,6 +1373,14 @@
       }, SYNC_INTERVAL);
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && state.token && state.user) {
+        // Refresh data when tab becomes visible
+        refreshCurrentPageData();
+      }
     };
 
     const stopAutoSync = () => {
@@ -1374,6 +1390,7 @@
       }
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
 
     const handleOnline = () => {
@@ -1442,6 +1459,16 @@
       }
       try {
         const response = await fetch(`/api${endpoint}`, { ...options, headers });
+
+        // Handle non-JSON responses
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+          }
+          return { success: true };
+        }
+
         const data = await response.json();
         if (!response.ok) {
           const error = new Error(data.message || data.error || 'Request failed');
@@ -1451,9 +1478,19 @@
         }
         return data;
       } catch (error) {
+        // Handle network errors
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          console.error('Network error:', error);
+          throw new Error('Network error. Please check your connection.');
+        }
+
         if (error.status === 401) {
-          handleLogout();
+          state.token = null;
+          state.user = null;
+          localStorage.removeItem('adminToken');
+          stopAutoSync();
           showToast('Session expired. Please login again.', 'error');
+          render();
         }
         throw error;
       }
@@ -1528,12 +1565,22 @@
     // ==================== RENDER FUNCTIONS ====================
     const render = () => {
       const app = document.getElementById('app');
+      if (!app) {
+        console.error('App container not found');
+        return;
+      }
+
       if (!state.token || !state.user) {
         app.innerHTML = renderLogin();
         return;
       }
+
       app.innerHTML = renderApp();
-      loadPageData();
+
+      // Only load page data if not already loading
+      if (!state.loading) {
+        loadPageData();
+      }
     };
 
     const renderLogin = () => `
@@ -1928,15 +1975,23 @@
     };
 
     const navigate = (page) => {
+      if (state.currentPage === page) return; // Already on this page
       state.currentPage = page;
-      state.loading = true;
+      state.loading = false; // Reset loading state for new page
       render();
     };
 
     // ==================== DATA LOADING ====================
     const loadPageData = async () => {
+      if (state.loading) return; // Prevent concurrent loads
+
       state.loading = true;
-      render(); // Show loading state immediately
+      // Update DOM to show loading state without full re-render
+      const content = document.querySelector('.content');
+      if (content) {
+        content.innerHTML = '<div class="loading"><div class="spinner"></div><span class="loading-text">Loading...</span></div>';
+      }
+
       try {
         switch (state.currentPage) {
           case 'dashboard': await loadStats(); break;
@@ -1949,7 +2004,10 @@
         console.error(`Error loading ${state.currentPage}:`, error);
         showToast(`Error loading ${state.currentPage}: ${error.message}`, 'error');
         state.loading = false;
-        render(); // Re-render to clear loading state on error
+        // Re-render content area only
+        if (content) {
+          content.innerHTML = renderPageContent();
+        }
       }
     };
 
@@ -2308,18 +2366,39 @@
 
     // ==================== INITIALIZATION ====================
     const init = async () => {
-      if (state.token) {
-        try {
-          const data = await api('/auth/me');
-          if (!data.data || data.data.role !== 'admin') { handleLogout(); showToast('Admin access required', 'error'); return; }
-          state.user = data.data;
-          startAutoSync();
-        } catch (error) { handleLogout(); }
+      try {
+        if (state.token) {
+          try {
+            const data = await api('/auth/me');
+            if (!data.data || data.data.role !== 'admin') {
+              handleLogout();
+              showToast('Admin access required', 'error');
+              return;
+            }
+            state.user = data.data;
+            startAutoSync();
+          } catch (error) {
+            console.error('Init auth error:', error);
+            // Clear invalid token and show login
+            state.token = null;
+            state.user = null;
+            localStorage.removeItem('adminToken');
+          }
+        }
+      } catch (error) {
+        console.error('Init error:', error);
+      } finally {
+        // Always render, even if errors occurred
+        render();
       }
-      render();
     };
 
-    init();
+    // Start app when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
     window.addEventListener('beforeunload', stopAutoSync);
   </script>
 </body>

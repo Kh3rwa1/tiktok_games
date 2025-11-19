@@ -245,8 +245,10 @@ class UserModel {
     return {
       id: user.id,
       username: user.username,
+      email: user.email,
       avatar: user.avatar,
       bio: user.bio,
+      role: user.role || 'user',
       stats: user.stats || {
         totalGamesPlayed: user.total_games_played || 0,
         totalPlayTime: user.total_play_time || 0
