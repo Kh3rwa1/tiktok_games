@@ -1282,53 +1282,6 @@
   <div id="modalContainer"></div>
 
   <script>
-    // ==================== FILE PROTOCOL DETECTION ====================
-    // Prevent direct file opening - this app requires a server
-    if (window.location.protocol === 'file:') {
-      document.getElementById('app').innerHTML = `
-        <div style="
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          padding: 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        ">
-          <div style="
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            max-width: 600px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
-          ">
-            <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
-            <h1 style="color: #333; margin-bottom: 20px; font-size: 24px;">Cannot Open Directly</h1>
-            <p style="color: #666; margin-bottom: 30px; line-height: 1.6;">
-              This admin panel cannot be opened directly as a file. It requires a Node.js server to function properly.
-            </p>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: left; margin-bottom: 20px;">
-              <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">📋 Setup Instructions:</h3>
-              <ol style="color: #555; line-height: 2; padding-left: 20px;">
-                <li>Navigate to the server-admin-panel directory</li>
-                <li>Install dependencies: <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px;">npm install</code></li>
-                <li>Configure your .env file (copy from .env.example)</li>
-                <li>Start the server: <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px;">npm start</code></li>
-                <li>Access via: <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px;">http://localhost:5000</code></li>
-              </ol>
-            </div>
-            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; text-align: left;">
-              <strong style="color: #856404;">📖 Documentation:</strong>
-              <p style="color: #856404; margin-top: 8px; margin-bottom: 0;">
-                Please refer to README.md for complete setup and deployment instructions.
-              </p>
-            </div>
-          </div>
-        </div>
-      `;
-      throw new Error('Direct file access not supported. Please run via Node.js server.');
-    }
-
     // ==================== STATE MANAGEMENT ====================
     const state = {
       user: null,
