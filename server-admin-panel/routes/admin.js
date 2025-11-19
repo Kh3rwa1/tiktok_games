@@ -151,59 +151,67 @@ const upload = multer({
 // Get platform statistics
 router.get('/stats', protect, adminOnly, async (req, res) => {
   try {
-    // Get user stats
-    const [userStats] = await pool.execute(`
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active,
-        SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admins
-      FROM users
-    `);
+    // Execute all queries in parallel for better performance
+    const [
+      [userStats],
+      gameStats,
+      [notifStats],
+      [recentGames],
+      [recentUsers]
+    ] = await Promise.all([
+      pool.execute(`
+        SELECT
+          COUNT(*) as total,
+          SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active,
+          SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admins
+        FROM users
+      `),
+      Game.getStats(),
+      pool.execute(`
+        SELECT
+          COUNT(*) as total,
+          SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active
+        FROM notifications
+      `),
+      pool.execute(`
+        SELECT id, title, plays, created_at FROM games
+        ORDER BY created_at DESC LIMIT 5
+      `),
+      pool.execute(`
+        SELECT id, username, email, created_at FROM users
+        ORDER BY created_at DESC LIMIT 5
+      `)
+    ]);
 
-    // Get game stats
-    const gameStats = await Game.getStats();
-
-    // Get notification stats
-    const [notifStats] = await pool.execute(`
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active
-      FROM notifications
-    `);
-
-    // Get recent activity
-    const [recentGames] = await pool.execute(`
-      SELECT id, title, plays, created_at FROM games
-      ORDER BY created_at DESC LIMIT 5
-    `);
-
-    const [recentUsers] = await pool.execute(`
-      SELECT id, username, email, created_at FROM users
-      ORDER BY created_at DESC LIMIT 5
-    `);
+    // Set cache headers for short-term caching
+    res.set('Cache-Control', 'private, max-age=5');
 
     res.json({
       success: true,
       data: {
         users: {
-          total: userStats[0].total || 0,
-          active: userStats[0].active || 0,
-          admins: userStats[0].admins || 0
+          total: userStats[0]?.total || 0,
+          active: userStats[0]?.active || 0,
+          admins: userStats[0]?.admins || 0
         },
         games: gameStats,
         notifications: {
-          total: notifStats[0].total || 0,
-          active: notifStats[0].active || 0
+          total: notifStats[0]?.total || 0,
+          active: notifStats[0]?.active || 0
         },
         recent: {
-          games: recentGames,
-          users: recentUsers
+          games: recentGames || [],
+          users: recentUsers || []
         }
       }
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
-    res.status(500).json({ success: false, error: 'Error fetching statistics' });
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching statistics',
+      code: 'STATS_ERROR'
+    });
   }
 });
 
@@ -1172,13 +1180,50 @@ router.post('/setup', async (req, res) => {
     const [admins] = await pool.execute(`SELECT id FROM users WHERE role = 'admin' LIMIT 1`);
 
     if (admins.length > 0) {
-      return res.status(400).json({ message: 'Admin already exists' });
+      return res.status(400).json({
+        success: false,
+        message: 'Admin already exists',
+        code: 'ADMIN_EXISTS'
+      });
     }
 
     const { username, email, password } = req.body;
 
+    // Validate input
     if (!username || !email || !password) {
-      return res.status(400).json({ message: 'Username, email and password required' });
+      return res.status(400).json({
+        success: false,
+        message: 'Username, email and password required',
+        code: 'MISSING_FIELDS'
+      });
+    }
+
+    // Validate username
+    if (username.length < 3 || username.length > 30) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username must be between 3 and 30 characters',
+        code: 'INVALID_USERNAME'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address',
+        code: 'INVALID_EMAIL'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters',
+        code: 'WEAK_PASSWORD'
+      });
     }
 
     const User = require('../models/mysql/User');
@@ -1192,12 +1237,26 @@ router.post('/setup', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Admin user created',
+      message: 'Admin user created successfully',
       data: { id: user.id, username, email }
     });
   } catch (error) {
     console.error('Error creating admin:', error);
-    res.status(500).json({ success: false, error: 'Error creating admin user' });
+
+    // Handle duplicate entry errors
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({
+        success: false,
+        message: 'Username or email already exists',
+        code: 'DUPLICATE_ENTRY'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Error creating admin user',
+      code: 'SETUP_ERROR'
+    });
   }
 });
 

@@ -244,8 +244,15 @@ const getMe = async (req, res) => {
     const user = await User.findById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
     }
+
+    // Set cache headers for short-term caching
+    res.set('Cache-Control', 'private, max-age=30');
 
     res.json({
       success: true,
@@ -253,7 +260,11 @@ const getMe = async (req, res) => {
     });
   } catch (error) {
     console.error('Get profile error:', error);
-    res.status(500).json({ message: 'Server error fetching profile' });
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching profile',
+      code: 'PROFILE_ERROR'
+    });
   }
 };
 
