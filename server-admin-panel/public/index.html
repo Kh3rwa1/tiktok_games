@@ -1158,6 +1158,45 @@
       font-weight: 500;
     }
 
+    /* ==================== ERROR STATE ==================== */
+    .error-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .error-state i {
+      font-size: 56px;
+      margin-bottom: 20px;
+      color: var(--danger);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .error-state h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .error-state p {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .error-state .btn {
+      margin: 0 auto;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(0.95); }
+    }
+
     /* ==================== GAME/USER ITEMS ==================== */
     .game-thumb {
       width: 48px;
@@ -1349,12 +1388,21 @@
     const handleOnline = () => {
       state.isOnline = true;
       showToast('Connection restored', 'success');
-      refreshCurrentPageData();
+
+      // Clear network-related errors and retry loading if there was an error
+      const currentError = state.errors[state.currentPage];
+      if (currentError && (currentError.status === 0 || currentError.message?.includes('Network'))) {
+        state.errors[state.currentPage] = null;
+        state.loading = false;
+        render();
+      } else {
+        refreshCurrentPageData();
+      }
     };
 
     const handleOffline = () => {
       state.isOnline = false;
-      showToast('You are offline', 'error');
+      showToast('You are offline. Some features may not work.', 'error');
     };
 
     const refreshCurrentPageData = async () => {
@@ -1434,9 +1482,12 @@
         // Handle network errors
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
           console.error('Network error:', error);
-          throw new Error('Network error. Please check your connection.');
+          const networkError = new Error('Network error. Please check your connection.');
+          networkError.status = 0;
+          throw networkError;
         }
 
+        // Handle specific HTTP status codes with better messages
         if (error.status === 401) {
           state.token = null;
           state.user = null;
@@ -1444,7 +1495,20 @@
           stopAutoSync();
           showToast('Session expired. Please login again.', 'error');
           render();
+        } else if (error.status === 403) {
+          error.message = error.message || 'You do not have permission to perform this action.';
+        } else if (error.status === 404) {
+          error.message = error.message || 'The requested resource was not found.';
+        } else if (error.status === 500) {
+          error.message = error.message || 'Server error. Please try again later.';
+        } else if (error.status === 502) {
+          error.message = 'Bad gateway. The server is temporarily unavailable.';
+        } else if (error.status === 503) {
+          error.message = 'Service unavailable. Please try again later.';
+        } else if (error.status === 504) {
+          error.message = 'Request timeout. The server took too long to respond.';
         }
+
         throw error;
       }
     };
@@ -1610,6 +1674,12 @@
     `;
 
     const renderPageContent = () => {
+      // Check for page-specific errors first
+      const pageError = state.errors[state.currentPage];
+      if (pageError) {
+        return renderErrorState(pageError);
+      }
+
       if (state.loading) {
         return '<div class="loading"><div class="spinner"></div><span class="loading-text">Loading...</span></div>';
       }
@@ -1621,6 +1691,41 @@
         case 'settings': return renderSettings();
         default: return renderDashboard();
       }
+    };
+
+    const renderErrorState = (error) => {
+      const errorMessages = {
+        'Network error': 'Unable to connect to the server. Please check your internet connection.',
+        'Failed to fetch': 'Could not reach the server. The server might be down or your connection may be unstable.',
+        '500': 'The server encountered an error. Please try again later.',
+        '502': 'Bad gateway. The server is temporarily unavailable.',
+        '503': 'Service unavailable. The server is overloaded or under maintenance.',
+        '504': 'Gateway timeout. The server took too long to respond.',
+        '404': 'The requested resource was not found.',
+        '403': 'You do not have permission to access this resource.',
+      };
+
+      // Find a matching error message
+      let displayMessage = error.message || 'An unexpected error occurred';
+      for (const [key, message] of Object.entries(errorMessages)) {
+        if (error.message?.includes(key) || error.status?.toString() === key) {
+          displayMessage = message;
+          break;
+        }
+      }
+
+      const pageName = state.currentPage.charAt(0).toUpperCase() + state.currentPage.slice(1);
+
+      return `
+        <div class="error-state">
+          <i class="fas fa-exclamation-circle"></i>
+          <h3>Failed to load ${escapeHtml(pageName)}</h3>
+          <p>${escapeHtml(displayMessage)}</p>
+          <button onclick="retryPageLoad()" class="btn btn-primary">
+            <i class="fas fa-redo"></i> Try Again
+          </button>
+        </div>
+      `;
     };
 
     const renderDashboard = () => `
@@ -1923,14 +2028,31 @@
       state.notifications = [];
       state.settings = {};
       state.lastSync = null;
+      state.errors = {}; // Clear all errors on logout
+      state.currentPage = 'dashboard'; // Reset to dashboard
       localStorage.removeItem('adminToken');
       render();
     };
 
     const navigate = (page) => {
       if (state.currentPage === page) return; // Already on this page
+
+      // Check if offline
+      if (!state.isOnline) {
+        showToast('You are offline. Please check your connection.', 'error');
+        return;
+      }
+
       state.currentPage = page;
       state.loading = false; // Reset loading state for new page
+      state.errors[page] = null; // Clear any previous errors for this page
+      render();
+    };
+
+    // Retry loading the current page
+    const retryPageLoad = () => {
+      state.errors[state.currentPage] = null;
+      state.loading = false;
       render();
     };
 
@@ -1955,9 +2077,17 @@
         }
       } catch (error) {
         console.error(`Error loading ${state.currentPage}:`, error);
-        showToast(`Error loading ${state.currentPage}: ${error.message}`, 'error');
+
+        // Set error state for the current page
+        state.errors[state.currentPage] = {
+          message: error.message || 'Failed to load data',
+          status: error.status,
+          timestamp: Date.now()
+        };
+
         state.loading = false;
-        // Re-render content area only
+
+        // Re-render content area to show error state with retry button
         if (content) {
           content.innerHTML = renderPageContent();
         }
