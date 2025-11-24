@@ -1302,6 +1302,8 @@
       background-size: 200% 100%;
     }
   </style>
+  <!-- Configuration -->
+  <script src="config.js"></script>
 </head>
 <body>
   <div class="particles">
@@ -1459,7 +1461,9 @@
         headers['Authorization'] = `Bearer ${state.token}`;
       }
       try {
-        const response = await fetch(`/api${endpoint}`, { ...options, headers });
+        // Use configured API base URL or default to relative URLs
+        const apiBaseUrl = window.APP_CONFIG?.API_BASE_URL || '';
+        const response = await fetch(`${apiBaseUrl}/api${endpoint}`, { ...options, headers });
 
         // Handle non-JSON responses
         const contentType = response.headers.get('content-type');

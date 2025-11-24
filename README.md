@@ -7,7 +7,9 @@ A premium mobile gaming platform with React Native app and Node.js backend featu
 ### Option 1: Using bolt.new (Recommended for Development)
 1. Import this repository into [bolt.new](https://bolt.new) from GitHub
 2. The admin panel will be automatically available for preview
-3. For full functionality, configure the backend server (see below)
+3. For full functionality, deploy the backend server separately
+
+📖 **See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete bolt.new deployment instructions**
 
 ### Option 2: Local Development
 ```bash
