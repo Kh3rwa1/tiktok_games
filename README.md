@@ -2,19 +2,29 @@
 
 A premium mobile gaming platform with React Native app and Node.js backend featuring AAA+ quality UI/UX, smooth 60fps animations, and comprehensive game management.
 
-## ⚠️ Important: Admin Panel Access
+## 🚀 Quick Start
 
-**DO NOT** open `server-admin-panel/public/index.html` directly in your browser! The admin panel is a **server-side application** that requires Node.js to run.
+### Option 1: Using bolt.new (Recommended for Development)
+1. Import this repository into [bolt.new](https://bolt.new) from GitHub
+2. The admin panel will be automatically available for preview
+3. For full functionality, deploy the backend server separately
 
-**Quick Start:**
+📖 **See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for complete bolt.new deployment instructions**
+
+### Option 2: Local Development
 ```bash
-cd server-admin-panel
-npm install
-npm start
-# Then open: http://localhost:5000
-```
+# Install all dependencies
+npm run install:all
 
-See [Accessing the Admin Panel](#accessing-the-admin-panel) and [App Customization Guide](#app-customization-guide) sections for detailed instructions.
+# Start the admin panel (development mode with Vite)
+npm run dev
+
+# OR start the backend server
+npm run server:dev
+
+# OR start the mobile app
+npm run mobile
+```
 
 ---
 
@@ -22,24 +32,32 @@ See [Accessing the Admin Panel](#accessing-the-admin-panel) and [App Customizati
 
 ```
 tiktok_games/
+├── public/                    # Admin Panel Frontend (Static)
+│   └── index.html            # Admin panel SPA
+│
+├── server/                    # Node.js Express Backend
+│   ├── config/               # Server & database configuration
+│   ├── controllers/          # Business logic
+│   ├── middleware/           # Auth, security, validation
+│   ├── models/               # MySQL database models
+│   ├── routes/               # API routes
+│   ├── utils/                # Utility functions
+│   ├── server.js             # Entry point
+│   └── package.json          # Server dependencies
+│
 ├── mobile/                    # React Native Expo App
 │   ├── src/
-│   │   ├── components/        # Reusable UI components
-│   │   ├── screens/           # App screens
-│   │   ├── store/             # Zustand state management
-│   │   ├── services/          # API services
-│   │   ├── types/             # TypeScript definitions
-│   │   └── utils/             # Utility functions
-│   └── package.json
+│   │   ├── components/       # Reusable UI components
+│   │   ├── screens/          # App screens
+│   │   ├── store/            # Zustand state management
+│   │   ├── services/         # API services
+│   │   ├── types/            # TypeScript definitions
+│   │   └── utils/            # Utility functions
+│   └── package.json          # Mobile app dependencies
 │
-└── server-admin-panel/        # Node.js Express Backend
-    ├── config/                # Server & database configuration
-    ├── controllers/           # Business logic
-    ├── middleware/            # Auth, security, validation
-    ├── models/                # MySQL database models
-    ├── routes/                # API routes
-    ├── public/                # Static files & admin panel
-    └── server.js              # Entry point
+├── package.json               # Root package.json for web development
+├── vite.config.js            # Vite configuration for bolt.new
+└── README.md
 ```
 
 ## Technology Stack
@@ -87,8 +105,8 @@ tiktok_games/
 #### Option A: File Manager Upload
 1. In cPanel, go to **File Manager**
 2. Navigate to your domain's directory (usually `public_html`)
-3. Create a new folder: `server-admin-panel`
-4. Upload all files from the `server-admin-panel` directory
+3. Upload the entire `tiktok_games` repository
+4. The structure should include both `server/` and `public/` directories
 
 #### Option B: Git Deployment
 ```bash
@@ -98,15 +116,16 @@ ssh username@yourdomain.com
 # Navigate to your directory
 cd public_html
 
-# Clone or upload the repository
+# Clone the repository
 git clone https://github.com/yourusername/tiktok_games.git
-cd tiktok_games/server-admin-panel
+cd tiktok_games/server
 ```
 
 ### Step 3: Configure Environment Variables
 
-1. In the `server-admin-panel` directory, copy the environment template:
+1. In the `server` directory, copy the environment template:
 ```bash
+cd server
 cp .env.example .env
 ```
 
@@ -154,7 +173,7 @@ openssl rand -hex 32
 3. Configure the application:
    - **Node.js version**: 18.x or higher
    - **Application mode**: Production
-   - **Application root**: `server-admin-panel` (or full path)
+   - **Application root**: `server` (or full path)
    - **Application URL**: your domain or subdomain
    - **Application startup file**: `server.js`
 4. Click **Create**
@@ -168,10 +187,10 @@ openssl rand -hex 32
 #### Option B: SSH
 ```bash
 # Activate the virtual environment
-source /home/username/nodevenv/server-admin-panel/18/bin/activate
+source /home/username/nodevenv/server/18/bin/activate
 
 # Navigate to app directory
-cd ~/public_html/server-admin-panel
+cd ~/public_html/server
 
 # Install dependencies
 npm install --production
@@ -508,13 +527,13 @@ Returns detailed performance metrics (admin access recommended).
 
 ### Important: Do NOT Open index.html Directly
 
-The admin panel located at `server-admin-panel/public/index.html` **cannot be opened directly** in a browser as a file (`file://` protocol). It requires the Node.js server to be running.
+The admin panel located at `public/index.html` **cannot be opened directly** in a browser as a file (`file://` protocol). It requires the Node.js server to be running.
 
 ### Correct Way to Access Admin Panel
 
 1. **Ensure server is running:**
    ```bash
-   cd server-admin-panel
+   cd server
    npm start
    ```
 
@@ -569,7 +588,7 @@ This section covers how to customize the branding and appearance of both the mob
 
 #### Admin Panel Name
 
-1. **Open `server-admin-panel/public/index.html`**
+1. **Open `public/index.html`**
 2. **Change the page title (line 6):**
    ```html
    <title>Admin Panel - Your App Name</title>
@@ -583,7 +602,7 @@ This section covers how to customize the branding and appearance of both the mob
 
 4. **Search and replace "KISKU" with your app name:**
    ```bash
-   # In server-admin-panel/public/index.html
+   # In public/index.html
    # Replace all occurrences of "KISKU" with your brand name
    ```
 
@@ -633,7 +652,7 @@ This section covers how to customize the branding and appearance of both the mob
 
 1. **Replace the Font Awesome icon with your logo:**
 
-   In `server-admin-panel/public/index.html`, find the login screen section (around line 1495):
+   In `public/index.html`, find the login screen section (around line 1495):
 
    **Before:**
    ```html
@@ -648,7 +667,7 @@ This section covers how to customize the branding and appearance of both the mob
 2. **Place your logo file:**
    ```bash
    # Add your logo to the public directory
-   server-admin-panel/public/logo.png
+   public/logo.png
    ```
 
 3. **Update the header/sidebar logo** (search for all logo references in index.html)
@@ -674,7 +693,7 @@ Then use these colors throughout your components.
 
 #### Admin Panel Colors
 
-In `server-admin-panel/public/index.html`, modify the CSS variables (around line 12-23):
+In `public/index.html`, modify the CSS variables (around line 12-23):
 
 ```css
 :root {
@@ -713,7 +732,7 @@ In `server-admin-panel/public/index.html`, modify the CSS variables (around line
 - [ ] Update Android package name and iOS bundle identifier
 - [ ] Replace app icon (`mobile/assets/icon.png`)
 - [ ] Replace splash screen (`mobile/assets/splash.png`)
-- [ ] Update admin panel title in `server-admin-panel/public/index.html`
+- [ ] Update admin panel title in `public/index.html`
 - [ ] Replace "KISKU" with your app name throughout
 - [ ] Add your logo to admin panel
 - [ ] Customize color scheme in both mobile app and admin panel
@@ -731,7 +750,7 @@ In `server-admin-panel/public/index.html`, modify the CSS variables (around line
 │   ├── assets/splash.png           # Splash screen
 │   └── .env                        # API URL
 │
-└── server-admin-panel/
+└── server/
     └── public/
         ├── index.html              # Admin panel UI, title, logo, colors
         └── logo.png                # Your logo file (add this)

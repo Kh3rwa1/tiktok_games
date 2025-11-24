@@ -189,14 +189,14 @@ app.use('/api/social', require('./routes/social'));
 app.use('/api/sync', require('./routes/sync'));
 
 // Serve static files (admin panel and game assets)
-app.use(express.static(path.join(__dirname, 'public'), {
+app.use(express.static(path.join(__dirname, '..', 'public'), {
   maxAge: config.env === 'production' ? '1d' : 0,
   etag: true,
   lastModified: true,
 }));
 
 // Serve game files with aggressive caching for better performance
-app.use('/games', express.static(path.join(__dirname, 'public', 'games'), {
+app.use('/games', express.static(path.join(__dirname, '..', 'public', 'games'), {
   maxAge: '7d', // Cache games for 7 days
   etag: true,
   lastModified: true,
@@ -315,7 +315,7 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
   }
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // 404 handler
